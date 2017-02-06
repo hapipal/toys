@@ -1,0 +1,32 @@
+{
+  "name": "toys",
+  "version": "0.0.1",
+  "description": "The hapi utility toy chest",
+  "main": "lib/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "lab -a code -t 100 -L",
+    "coveralls": "lab -r lcov | coveralls"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devinivy/toys.git"
+  },
+  "keywords": [],
+  "author": "Devin Ivy <devin@bigroomstudios.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/devinivy/toys/issues"
+  },
+  "homepage": "https://github.com/devinivy/toys#readme",
+  "dependencies": {
+    "hoek": "4.x.x"
+  },
+  "devDependencies": {
+    "code": "4.x.x",
+    "coveralls": "2.x.x",
+    "lab": "12.x.x"
+  }
+}
