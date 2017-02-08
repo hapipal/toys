@@ -130,7 +130,10 @@ describe('Toys', () => {
             };
 
             const withDefaults = Toys.withDefaults(defaults);
-            expect(withDefaults(obj)).to.equal(withDefaults(obj));
+            const once = withDefaults(obj);
+            const twice = withDefaults(obj);
+
+            expect(once).to.equal(twice);
             done();
         });
 
@@ -171,6 +174,7 @@ describe('Toys', () => {
 
             const toys = new Toys();
             const result = toys.withDefaults(defaults, true)(obj);
+
             expect(result.c.e).to.equal([4]);
             expect(result.a).to.equal(null);
             expect(result.b).to.equal(2);
@@ -320,30 +324,364 @@ describe('Toys', () => {
             expect(Toys.reacher('q', { default: '' })(obj)).to.equal('');
             done();
         });
+
+        it('is reusable.', (done) => {
+
+            const reacher = Toys.reacher('a.b.c.d');
+            const anotherObj = { a: { b: { c: { d: 'x' } } } };
+
+            expect(reacher(obj)).to.equal(1);
+            expect(reacher(anotherObj)).to.equal('x');
+            done();
+        });
+
+        it('works as an instance method.', (done) => {
+
+            const toys = new Toys();
+
+            expect(toys.reacher('a/b/c/d', '/')(obj)).to.equal(1);
+            done();
+        });
     });
 
     describe('transformer()', () => {
 
+        const source = {
+            address: {
+                one: '123 main street',
+                two: 'PO Box 1234'
+            },
+            zip: {
+                code: 3321232,
+                province: null
+            },
+            title: 'Warehouse',
+            state: 'CA'
+        };
+
+        const sourcesArray = [{
+            address: {
+                one: '123 main street',
+                two: 'PO Box 1234'
+            },
+            zip: {
+                code: 3321232,
+                province: null
+            },
+            title: 'Warehouse',
+            state: 'CA'
+        }, {
+            address: {
+                one: '456 market street',
+                two: 'PO Box 5678'
+            },
+            zip: {
+                code: 9876,
+                province: null
+            },
+            title: 'Garage',
+            state: 'NY'
+        }];
+
+        it('transforms an object based on the input object.', (done) => {
+
+            const transform = Toys.transformer({
+                'person.address.lineOne': 'address.one',
+                'person.address.lineTwo': 'address.two',
+                'title': 'title',
+                'person.address.region': 'state',
+                'person.address.zip': 'zip.code',
+                'person.address.location': 'zip.province'
+            });
+
+            expect(transform(source)).to.equal({
+                person: {
+                    address: {
+                        lineOne: '123 main street',
+                        lineTwo: 'PO Box 1234',
+                        region: 'CA',
+                        zip: 3321232,
+                        location: null
+                    }
+                },
+                title: 'Warehouse'
+            });
+
+            done();
+        });
+
+        it('transforms an array of objects based on the input object.', (done) => {
+
+            const transform = Toys.transformer({
+                'person.address.lineOne': 'address.one',
+                'person.address.lineTwo': 'address.two',
+                'title': 'title',
+                'person.address.region': 'state',
+                'person.address.zip': 'zip.code',
+                'person.address.location': 'zip.province'
+            });
+
+            expect(transform(sourcesArray)).to.equal([
+                {
+                    person: {
+                        address: {
+                            lineOne: '123 main street',
+                            lineTwo: 'PO Box 1234',
+                            region: 'CA',
+                            zip: 3321232,
+                            location: null
+                        }
+                    },
+                    title: 'Warehouse'
+                },
+                {
+                    person: {
+                        address: {
+                            lineOne: '456 market street',
+                            lineTwo: 'PO Box 5678',
+                            region: 'NY',
+                            zip: 9876,
+                            location: null
+                        }
+                    },
+                    title: 'Garage'
+                }
+            ]);
+
+            done();
+        });
+
+        it('uses the reach options passed into it', (done) => {
+
+            const schema = {
+                'person-address-lineOne': 'address-one',
+                'person-address-lineTwo': 'address-two',
+                'title': 'title',
+                'person-address-region': 'state',
+                'person-prefix': 'person-title',
+                'person-zip': 'zip-code'
+            };
+            const options = {
+                separator: '-',
+                default: 'unknown'
+            };
+            const transform = Toys.transformer(schema, options);
+
+            expect(transform(source)).to.equal({
+                person: {
+                    address: {
+                        lineOne: '123 main street',
+                        lineTwo: 'PO Box 1234',
+                        region: 'CA'
+                    },
+                    prefix: 'unknown',
+                    zip: 3321232
+                },
+                title: 'Warehouse'
+            });
+
+            done();
+        });
+
+        it('uses a default separator for keys if options does not specify on', (done) => {
+
+            const schema = {
+                'person.address.lineOne': 'address.one',
+                'person.address.lineTwo': 'address.two',
+                'title': 'title',
+                'person.address.region': 'state',
+                'person.prefix': 'person.title',
+                'person.zip': 'zip.code'
+            };
+            const options = {
+                default: 'unknown'
+            };
+            const transform = Toys.transformer(schema, options);
+
+            expect(transform(source)).to.equal({
+                person: {
+                    address: {
+                        lineOne: '123 main street',
+                        lineTwo: 'PO Box 1234',
+                        region: 'CA'
+                    },
+                    prefix: 'unknown',
+                    zip: 3321232
+                },
+                title: 'Warehouse'
+            });
+
+            done();
+        });
+
+        it('works to create shallow objects.', (done) => {
+
+            const transform = Toys.transformer({
+                lineOne: 'address.one',
+                lineTwo: 'address.two',
+                title: 'title',
+                region: 'state',
+                province: 'zip.province'
+            });
+
+            expect(transform(source)).to.equal({
+                lineOne: '123 main street',
+                lineTwo: 'PO Box 1234',
+                title: 'Warehouse',
+                region: 'CA',
+                province: null
+            });
+
+            done();
+        });
+
+        it('only allows strings in the map.', (done) => {
+
+            expect(() => {
+
+                Toys.transformer({
+                    lineOne: {}
+                });
+            }).to.throw('All mappings must be strings');
+
+            done();
+        });
+
+        it('throws an error on invalid arguments.', (done) => {
+
+            expect(() => {
+
+                Toys.transformer({})(NaN);
+            }).to.throw('Invalid source object: must be null, undefined, an object, or an array');
+
+            done();
+        });
+
+        it('is safe to pass null.', (done) => {
+
+            const transform = Toys.transformer({});
+            expect(transform(null)).to.equal({});
+
+            done();
+        });
+
+        it('is safe to pass undefined.', (done) => {
+
+            const transform = Toys.transformer({});
+            expect(transform(undefined)).to.equal({});
+
+            done();
+        });
+
+        it('is reusable.', (done) => {
+
+            const transform = Toys.transformer({
+                lineOne: 'address.one',
+                lineTwo: 'address.two',
+                title: 'title',
+                region: 'state',
+                province: 'zip.province'
+            });
+
+            expect(transform(sourcesArray[0])).to.equal({
+                lineOne: '123 main street',
+                lineTwo: 'PO Box 1234',
+                title: 'Warehouse',
+                region: 'CA',
+                province: null
+            });
+
+            expect(transform(sourcesArray[1])).to.equal({
+                lineOne: '456 market street',
+                lineTwo: 'PO Box 5678',
+                title: 'Garage',
+                region: 'NY',
+                province: null
+            });
+
+            done();
+        });
+
+        it('works as an instance method.', (done) => {
+
+            const toys = new Toys();
+            const transform = toys.transformer({
+                lineOne: 'address.one',
+                lineTwo: 'address.two',
+                title: 'title',
+                region: 'state',
+                province: 'zip.province'
+            });
+
+            expect(transform(source)).to.equal({
+                lineOne: '123 main street',
+                lineTwo: 'PO Box 1234',
+                title: 'Warehouse',
+                region: 'CA',
+                province: null
+            });
+
+            done();
+        });
     });
+
     describe('promisify()', () => {
 
     });
-    describe('onRequest()', () => {
 
-    });
-    describe('onPreAuth()', () => {
+    // Test the request extension helpers
 
-    });
-    describe('onPostAuth()', () => {
+    [
+        'onRequest',
+        'onPreAuth',
+        'onPostAuth',
+        'onPreHandler',
+        'onPostHandler',
+        'onPreResponse'
+    ].forEach((ext) => {
 
-    });
-    describe('onPreHandler()', () => {
+        describe(`${ext}()`, () => {
 
-    });
-    describe('onPostHandler()', () => {
+            it('creates a valid hapi request extension without options.', (done) => {
 
-    });
-    describe('onPreResponse()', () => {
+                const fn = function () {};
+                const extension = Toys[ext](fn);
 
+                expect(Object.keys(extension)).to.only.contain(['type', 'method']);
+                expect(extension.type).to.equal(ext);
+                expect(extension.method).to.shallow.equal(fn);
+
+                done();
+            });
+
+            it('creates a valid hapi request extension with options.', (done) => {
+
+                const fn = function () {};
+                const opts = { before: 'loveboat' };
+                const extension = Toys[ext](fn, opts);
+
+                expect(Object.keys(extension)).to.only.contain(['type', 'method', 'options']);
+                expect(extension.type).to.equal(ext);
+                expect(extension.method).to.shallow.equal(fn);
+                expect(extension.options).to.shallow.equal(opts);
+
+                done();
+            });
+
+            it('works as an instance method.', (done) => {
+
+                const fn = function () {};
+                const opts = { before: 'loveboat' };
+                const toys = new Toys();
+                const extension = toys[ext](fn, opts);
+
+                expect(Object.keys(extension)).to.only.contain(['type', 'method', 'options']);
+                expect(extension.type).to.equal(ext);
+                expect(extension.method).to.shallow.equal(fn);
+                expect(extension.options).to.shallow.equal(opts);
+
+                done();
+            });
+        });
     });
 });
