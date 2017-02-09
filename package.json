@@ -27,6 +27,7 @@
   "devDependencies": {
     "code": "4.x.x",
     "coveralls": "2.x.x",
-    "lab": "12.x.x"
+    "lab": "12.x.x",
+    "pinkie": "2.x.x"
   }
 }

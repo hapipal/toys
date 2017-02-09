@@ -4,6 +4,7 @@
 
 const Lab = require('lab');
 const Code = require('code');
+const Pinkie = require('pinkie');
 const Toys = require('..');
 
 // Test shortcuts
@@ -627,6 +628,72 @@ describe('Toys', () => {
 
     describe('promisify()', () => {
 
+        const fn = (value, cb) => {
+
+            if (value instanceof Error) {
+                return cb(value);
+            }
+
+            return cb(null, value, 'plus', 'extras');
+        };
+
+        it('promisifies a function, ignoring additional callback arguments.', () => {
+
+            const pifiedFn = Toys.promisify(fn);
+
+            return pifiedFn('24carat').then((value) => {
+
+                expect(value).to.equal('24carat');
+
+                return pifiedFn(new Error('0carat'));
+            })
+            .catch((err) => {
+
+                expect(err).to.be.instanceof(Error);
+                expect(err.message).to.equal('0carat');
+            });
+        });
+
+        it('promisifies a function with specified promise implementation.', () => {
+
+            const pifiedFn = Toys.promisify(Pinkie, fn);
+            const promise = pifiedFn('24carat');
+
+            expect(promise).to.be.instanceof(Pinkie);
+
+            return promise.then((value) => {
+
+                expect(value).to.equal('24carat');
+            });
+        });
+
+        it('works as an instance method without custom promise implementation.', () => {
+
+            const toys = new Toys();
+            const pifiedFn = toys.promisify(fn);
+            const promise = pifiedFn('24carat');
+
+            expect(promise).to.be.instanceof(Promise);
+
+            return promise.then((value) => {
+
+                expect(value).to.equal('24carat');
+            });
+        });
+
+        it('works as an instance method with custom promise implementation.', () => {
+
+            const toys = new Toys(null, Pinkie);
+            const pifiedFn = toys.promisify(fn);
+            const promise = pifiedFn('24carat');
+
+            expect(promise).to.be.instanceof(Pinkie);
+
+            return promise.then((value) => {
+
+                expect(value).to.equal('24carat');
+            });
+        });
     });
 
     // Test the request extension helpers
