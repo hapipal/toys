@@ -4,6 +4,8 @@
 
 const Lab = require('lab');
 const Code = require('code');
+const Hapi = require('hapi');
+const Boom = require('boom');
 const Pinkie = require('pinkie');
 const Toys = require('..');
 
@@ -187,7 +189,147 @@ describe('Toys', () => {
 
     describe('handler()', () => {
 
+        it('catches failure in async handler, maintaining context.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.bind({ ctx: 'aware' });
+
+            server.route({
+                method: 'get',
+                path: '/',
+                handler: Toys.handler(function (request, reply) {
+
+                    return Promise.reject(Boom.badData(`Context ${this.ctx}`)); // async fns are simply promise-returning
+                })
+            });
+
+            server.inject('/', (res) => {
+
+                expect(res.statusCode).to.equal(422);
+                expect(res.result.message).to.equal('Context aware');
+                done();
+            });
+        });
+
+        it('accepts string notation, as plain hander.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('handler.get', (request, reply) => {
+
+                return reply(null, request.params.x + request.params.y).code(299);
+            });
+
+            server.route({
+                method: 'get',
+                path: '/{x}/{y}',
+                handler: Toys.handler(server, 'handler.get')
+            });
+
+            server.inject('/a/b', (res) => {
+
+                expect(res.statusCode).to.equal(299);
+                expect(res.result).to.equal('ab');
+                done();
+            });
+        });
+
+        it('accepts string notation, with arguments.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('perform.addition', (a, b) => {
+
+                return Number(a) + Number(b);
+            }, {
+                callback: false
+            });
+
+            server.route({
+                method: 'get',
+                path: '/{x}/{y}',
+                handler: Toys.handler(server, 'perform.addition(params.x, params.y)')
+            });
+
+            server.inject('/2/7', (res) => {
+
+                expect(res.result).to.equal(9);
+                done();
+            });
+        });
+
+        it('accepts string notation, with zero args.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('the.answer', () => 42, {
+                callback: false
+            });
+
+            server.route({
+                method: 'get',
+                path: '/',
+                handler: Toys.handler(server, 'the.answer()')
+            });
+
+            server.inject('/', (res) => {
+
+                expect(res.result).to.equal(42);
+                done();
+            });
+        });
+
+        it('accepts string notation, with a callback.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('calling.back', (a, b, cb) => {
+
+                return cb(null, Number(a) + Number(b));
+            });
+
+            server.route({
+                method: 'get',
+                path: '/cb/{a}/{b}',
+                handler: Toys.handler(server, 'calling.back(params.a, params.b, cb)')
+            });
+
+            server.route({
+                method: 'get',
+                path: '/callback/{a}/{b}',
+                handler: Toys.handler(server, 'calling.back(params.a, params.b, callback)')
+            });
+
+            server.route({
+                method: 'get',
+                path: '/next/{a}/{b}',
+                handler: Toys.handler(server, 'calling.back(params.a, params.b, next)')
+            });
+
+            server.inject('/cb/1/2', (res1) => {
+
+                expect(res1.result).to.equal(3);
+
+                server.inject('/callback/2/4', (res2) => {
+
+                    expect(res2.result).to.equal(6);
+
+                    server.inject('/next/4/8', (res3) => {
+
+                        expect(res3.result).to.equal(12);
+                        done();
+                    });
+                });
+            });
+        });
     });
+
     describe('pre()', () => {
 
     });
