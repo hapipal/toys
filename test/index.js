@@ -242,10 +242,7 @@ describe('Toys', () => {
             const server = new Hapi.Server();
             server.connection();
 
-            server.method('perform.addition', (a, b) => {
-
-                return Number(a) + Number(b);
-            }, {
+            server.method('perform.addition', (a, b) =>  Number(a) + Number(b), {
                 callback: false
             });
 
@@ -366,7 +363,7 @@ describe('Toys', () => {
             });
         });
 
-        it('resolves method lazily.', (done) => {
+        it('resolves server method lazily.', (done) => {
 
             const server = new Hapi.Server();
             server.connection();
@@ -437,6 +434,175 @@ describe('Toys', () => {
 
     describe('pre()', () => {
 
+        it('creates a route prereq with `assign` defaulting to server method\'s name.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('the.answer', (cb) => cb(null, 42));
+
+            server.route({
+                method: 'get',
+                path: '/',
+                config: {
+                    handler: (request, reply) => reply(request.pre),
+                    pre: [
+                        Toys.pre(server, 'the.answer(cb)')
+                    ]
+                }
+            });
+
+            server.inject('/', (res) => {
+
+                expect(res.result).to.equal({ 'the.answer': 42 });
+                done();
+            });
+        });
+
+        it('creates a route prereq with `assign` specified.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('the.answer', (cb) => cb(null, 42));
+
+            server.route({
+                method: 'get',
+                path: '/',
+                config: {
+                    handler: (request, reply) => reply(request.pre),
+                    pre: [
+                        Toys.pre(server, 'the.answer(cb)', 'my.answer')
+                    ]
+                }
+            });
+
+            server.inject('/', (res) => {
+
+                expect(res.result).to.equal({ 'my.answer': 42 });
+                done();
+            });
+        });
+
+        it('creates a route prereq with options.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('the.answer', (cb) => cb(null, 42));
+
+            server.route({
+                method: 'get',
+                path: '/',
+                config: {
+                    handler: (request, reply) => reply(request.pre),
+                    pre: [
+                        Toys.pre(server, 'the.answer(cb)', { assign: 'my.answer' })
+                    ]
+                }
+            });
+
+            server.inject('/', (res) => {
+
+                expect(res.result).to.equal({ 'my.answer': 42 });
+                done();
+            });
+        });
+
+        it('resolves server method lazily.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('perform.operation', (a, b, cb) => cb(null, Number(a) + Number(b)));
+
+            server.route({
+                method: 'get',
+                path: '/{x}/{y}',
+                config: {
+                    handler: (request, reply) => reply(request.pre),
+                    pre: [
+                        Toys.pre(server, 'perform.operation(params.x, params.y, cb)')
+                    ]
+                }
+            });
+
+            server.methods.perform.operation = (a, b, cb) => cb(null, Number(a) * Number(b));
+
+            server.inject('/2/7', (res) => {
+
+                expect(res.result).to.equal({ 'perform.operation': 14 });
+                done();
+            });
+        });
+
+        it('creates a route prereq that logs cached server method report.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection({ routes: { log: true } });
+
+            server.method('the.answer', (cb) => cb(null, 42), {
+                cache: {
+                    expiresIn: 1000,
+                    generateTimeout: 10
+                }
+            });
+
+            server.route({
+                method: 'get',
+                path: '/',
+                config: {
+                    handler: (request, reply) => reply(request.pre),
+                    pre: [
+                        Toys.pre(server, 'the.answer(cb)')
+                    ]
+                }
+            });
+
+            server.initialize((err) => {
+
+                expect(err).to.not.exist();
+
+                server.inject('/', (res) => {
+
+                    expect(res.result).to.equal({ 'the.answer': 42 });
+
+                    const log = res.request.getLog('method')[0];
+
+                    expect(log).to.exist();
+                    expect(log.tags).to.equal(['pre', 'method', 'the.answer']);
+                    expect(log.internal).to.equal(false);
+                    expect(log.data.msec).to.exist();
+                    done();
+                });
+            });
+        });
+
+        it('works as an instance method.', (done) => {
+
+            const server = new Hapi.Server();
+            const toys = new Toys(server);
+            server.connection();
+
+            server.method('the.answer', (cb) => cb(null, 42));
+
+            server.route({
+                method: 'get',
+                path: '/',
+                config: {
+                    handler: (request, reply) => reply(request.pre),
+                    pre: [
+                        toys.pre('the.answer(cb)', { assign: 'my.answer' })
+                    ]
+                }
+            });
+
+            server.inject('/', (res) => {
+
+                expect(res.result).to.equal({ 'my.answer': 42 });
+                done();
+            });
+        });
     });
 
     describe('reacher()', () => {
