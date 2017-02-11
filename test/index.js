@@ -328,6 +328,111 @@ describe('Toys', () => {
                 });
             });
         });
+
+        it('logs cached server method report.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection({ routes: { log: true } });
+
+            server.method('the.answer', (cb) => cb(null, 42), {
+                cache: {
+                    expiresIn: 1000,
+                    generateTimeout: 10
+                }
+            });
+
+            server.route({
+                method: 'get',
+                path: '/',
+                handler: Toys.handler(server, 'the.answer(cb)')
+            });
+
+            server.initialize((err) => {
+
+                expect(err).to.not.exist();
+
+                server.inject('/', (res) => {
+
+                    expect(res.result).to.equal(42);
+
+                    const log = res.request.getLog('method')[0];
+
+                    expect(log).to.exist();
+                    expect(log.tags).to.equal(['handler', 'method', 'the.answer']);
+                    expect(log.internal).to.equal(false);
+                    expect(log.data.msec).to.exist();
+                    done();
+                });
+            });
+        });
+
+        it('resolves method lazily.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            server.method('perform.operation', (a, b, cb) => cb(null, Number(a) + Number(b)));
+
+            server.route({
+                method: 'get',
+                path: '/{x}/{y}',
+                handler: Toys.handler(server, 'perform.operation(params.x, params.y, cb)')
+            });
+
+            server.methods.perform.operation = (a, b, cb) => cb(null, Number(a) * Number(b));
+
+            server.inject('/2/7', (res) => {
+
+                expect(res.result).to.equal(14);
+                done();
+            });
+        });
+
+        it('works as an instance method with string notation.', (done) => {
+
+            const server = new Hapi.Server();
+            const toys = new Toys(server);
+            server.connection();
+
+            server.method('perform.addition', (a, b, cb) => cb(null, Number(a) + Number(b)));
+
+            server.route({
+                method: 'get',
+                path: '/{x}/{y}',
+                handler: toys.handler('perform.addition(params.x, params.y, cb)')
+            });
+
+            server.inject('/2/7', (res) => {
+
+                expect(res.result).to.equal(9);
+                done();
+            });
+        });
+
+        it('works as an instance method with async function.', (done) => {
+
+            const server = new Hapi.Server();
+            const toys = new Toys();
+            server.connection();
+
+            server.bind({ ctx: 'aware' });
+
+            server.route({
+                method: 'get',
+                path: '/',
+                handler: toys.handler(function (request, reply) {
+
+                    return Promise.reject(Boom.badData(`Context ${this.ctx}`)); // async fns are simply promise-returning
+                })
+            });
+
+            server.inject('/', (res) => {
+
+                expect(res.statusCode).to.equal(422);
+                expect(res.result.message).to.equal('Context aware');
+                done();
+            });
+        });
     });
 
     describe('pre()', () => {
