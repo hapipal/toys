@@ -1109,6 +1109,82 @@ describe('Toys', () => {
         });
     });
 
+    describe('auth.strategy()', () => {
+
+        it('creates a one-off auth strategy with duplicate scheme name.', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection();
+
+            Toys.auth.strategy(server, 'test-auth', (request, reply) => {
+
+                return reply.continue({ credentials: { user: 'bill' } });
+            });
+
+            // Reuse the scheme implicitly created above
+            server.auth.strategy('test-auth-again', 'test-auth');
+
+            server.route([
+                {
+                    method: 'get',
+                    path: '/',
+                    config: {
+                        auth: 'test-auth',
+                        handler: (request, reply) => reply(request.auth.credentials)
+                    }
+                },
+                {
+                    method: 'get',
+                    path: '/again',
+                    config: {
+                        auth: 'test-auth-again',
+                        handler: (request, reply) => reply(request.auth.credentials)
+                    }
+                }
+            ]);
+
+            server.inject('/', (res1) => {
+
+                expect(res1.result).to.equal({ user: 'bill' });
+
+                server.inject('/again', (res2) => {
+
+                    expect(res2.result).to.equal({ user: 'bill' });
+                    done();
+                });
+            });
+        });
+
+        it('works as an instance method.', (done) => {
+
+            const server = new Hapi.Server();
+            const toys = new Toys(server);
+            server.connection();
+
+            toys.auth.strategy('test-auth', (request, reply) => {
+
+                return reply.continue({ credentials: { user: 'bill' } });
+            });
+
+            server.route([
+                {
+                    method: 'get',
+                    path: '/',
+                    config: {
+                        auth: 'test-auth',
+                        handler: (request, reply) => reply(request.auth.credentials)
+                    }
+                }
+            ]);
+
+            server.inject('/', (res) => {
+
+                expect(res.result).to.equal({ user: 'bill' });
+                done();
+            });
+        });
+    });
+
     // Test the request extension helpers
 
     [
