@@ -257,7 +257,7 @@ const userAddress = Toys.transformer({
     'street2': 'address.street_two',
     'city': 'address.city',
     'state': 'address.state.code',
-    'country': 'address.country.code',
+    'country': 'address.country.code'
 });
 
 server.route({
