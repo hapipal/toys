@@ -14,7 +14,13 @@
     "type": "git",
     "url": "git+https://github.com/devinivy/toys.git"
   },
-  "keywords": [],
+  "keywords": [
+    "hapi",
+    "utility",
+    "performance",
+    "convenience",
+    "tools"
+  ],
   "author": "Devin Ivy <devin@bigroomstudios.com>",
   "license": "MIT",
   "bugs": {
