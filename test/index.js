@@ -1188,6 +1188,11 @@ describe('Toys', () => {
     // Test the request extension helpers
 
     [
+        'ext',
+        'onPreStart',
+        'onPostStart',
+        'onPreStop',
+        'onPostStop',
         'onRequest',
         'onPreAuth',
         'onPostAuth',
@@ -1196,6 +1201,8 @@ describe('Toys', () => {
         'onPreResponse'
     ].forEach((ext) => {
 
+        const isExt = (ext === 'ext');
+
         describe(`${ext}()`, () => {
 
             it('creates a valid hapi request extension without options.', (done) => {
@@ -1203,8 +1210,10 @@ describe('Toys', () => {
                 const fn = function () {};
                 const extension = Toys[ext](fn);
 
-                expect(Object.keys(extension)).to.only.contain(['type', 'method']);
-                expect(extension.type).to.equal(ext);
+                const keys = isExt ? ['method'] : ['type', 'method'];
+
+                expect(Object.keys(extension)).to.only.contain(keys);
+                isExt || expect(extension.type).to.equal(ext);
                 expect(extension.method).to.shallow.equal(fn);
 
                 done();
@@ -1216,8 +1225,10 @@ describe('Toys', () => {
                 const opts = { before: 'loveboat' };
                 const extension = Toys[ext](fn, opts);
 
-                expect(Object.keys(extension)).to.only.contain(['type', 'method', 'options']);
-                expect(extension.type).to.equal(ext);
+                const keys = isExt ? ['method', 'options'] : ['type', 'method', 'options'];
+
+                expect(Object.keys(extension)).to.only.contain(keys);
+                isExt || expect(extension.type).to.equal(ext);
                 expect(extension.method).to.shallow.equal(fn);
                 expect(extension.options).to.shallow.equal(opts);
 
@@ -1231,8 +1242,10 @@ describe('Toys', () => {
                 const toys = new Toys();
                 const extension = toys[ext](fn, opts);
 
-                expect(Object.keys(extension)).to.only.contain(['type', 'method', 'options']);
-                expect(extension.type).to.equal(ext);
+                const keys = isExt ? ['method', 'options'] : ['type', 'method', 'options'];
+
+                expect(Object.keys(extension)).to.only.contain(keys);
+                isExt || expect(extension.type).to.equal(ext);
                 expect(extension.method).to.shallow.equal(fn);
                 expect(extension.options).to.shallow.equal(opts);
 
