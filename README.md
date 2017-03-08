@@ -9,7 +9,7 @@ The hapi utility toy chest
 
 Toys is a collection of utilities made to reduce common boilerplate in hapi projects, alleviate a few of hapi's quirks, and provide versions of widely-used utilities from [Hoek](https://github.com/hapijs/hoek) optimized to perform well in hot code paths such as route handlers.
 
-Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyserver-name-authenticate), [`Toys.reacher()`](API.md#toysreacherchain-options), and [`Toys.withDefaults()`](API.md#toyswithdefaultsdefaults-isNullOverride).
+Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyserver-name-authenticate), [`Toys.reacher()`](API.md#toysreacherchain-options), and [`Toys.withDefaults()`](API.md#toyswithdefaultsdefaults-isnulloverride).
 
 ```js
 const Hapi = require('hapi');
