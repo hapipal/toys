@@ -1059,8 +1059,7 @@ describe('Toys', () => {
                 expect(value).to.equal('24carat');
 
                 return pifiedFn(new Error('0carat'));
-            })
-            .catch((err) => {
+            }).catch((err) => {
 
                 expect(err).to.be.instanceof(Error);
                 expect(err.message).to.equal('0carat');
