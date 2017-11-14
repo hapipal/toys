@@ -31,11 +31,11 @@
     "hoek": "4.x.x"
   },
   "devDependencies": {
-    "boom": "4.x.x",
+    "boom": "5.x.x",
     "code": "4.x.x",
-    "coveralls": "2.x.x",
+    "coveralls": "3.x.x",
     "hapi": "16.x.x",
-    "lab": "12.x.x",
+    "lab": "14.x.x",
     "pinkie": "2.x.x"
   }
 }

@@ -97,7 +97,7 @@ server.route({
 ### `Toys.pre(server, notation, [options])`
 > As instance, `toys.pre(notation, [options])`
 
-Returns a [route prerequisite object](https://github.com/hapijs/hapi/blob/master/API.md#route-prerequisites) given a hapi `server`, a short-hand string `notation` (described [above](#notation-format)) referencing a server method on that server, and optional `options` to set the prerequisite's `assign` or `failAction`.  By default `assign` is set to the server method's name.
+Returns a [route prerequisite object](https://github.com/hapijs/hapi/blob/v16/API.md#route-prerequisites) given a hapi `server`, a short-hand string `notation` (described [above](#notation-format)) referencing a server method on that server, and optional `options` to set the prerequisite's `assign` or `failAction`.  By default `assign` is set to the server method's name.
 
 ```js
 server.method({
@@ -126,7 +126,7 @@ server.route({
 ### `Toys.ext(method, [options])`
 > As instance, `toys.ext(method, [options])`
 
-Returns a hapi [extension config](https://github.com/hapijs/hapi/blob/master/API.md#serverextevents) `{ method, options }` without the `type` field. The config only has `options` set when provided as an argument.  This intended to be used with the route `ext` config.
+Returns a hapi [extension config](https://github.com/hapijs/hapi/blob/v16/API.md#serverextevents) `{ method, options }` without the `type` field. The config only has `options` set when provided as an argument.  This intended to be used with the route `ext` config.
 
 ```js
 server.route({
@@ -154,7 +154,7 @@ server.route({
 ### `Toys.EXTENSION(method, [options])`
 > As instance, `toys.EXTENSION(method, [options])`
 
-Returns a hapi [extension config](https://github.com/hapijs/hapi/blob/master/API.md#serverextevents) `{ type, method, options}` with the `type` field set to `EXTENSION`, where `EXTENSION` is any of `onRequest`, `onPreAuth`, `onPostAuth`, `onPreHandler`, `onPostHandler`, `onPreResponse`, `onPreStart`, `onPostStart`, `onPreStop`, or `onPostStop`. The config only has `options` set when provided as an argument.  This is intended to be used with [`server.ext()`](https://github.com/hapijs/hapi/blob/master/API.md#serverextevents).
+Returns a hapi [extension config](https://github.com/hapijs/hapi/blob/v16/API.md#serverextevents) `{ type, method, options}` with the `type` field set to `EXTENSION`, where `EXTENSION` is any of `onRequest`, `onPreAuth`, `onPostAuth`, `onPreHandler`, `onPostHandler`, `onPreResponse`, `onPreStart`, `onPostStart`, `onPreStop`, or `onPostStop`. The config only has `options` set when provided as an argument.  This is intended to be used with [`server.ext()`](https://github.com/hapijs/hapi/blob/v16/API.md#serverextevents).
 
 ```js
 server.ext([
@@ -278,7 +278,7 @@ server.route({
 ### `Toys.auth.strategy(server, name, authenticate)`
 > As instance, `toys.auth.strategy(name, authenticate)`
 
-Adds an auth scheme and strategy with name `name` to `server`.  Its implementation is given by `authenticate` as described in [`server.auth.scheme()`](https://github.com/hapijs/hapi/blob/master/API.md#serverauthschemename-scheme).  This is intended to make it simple to create a barebones auth strategy without having to create a reusable auth scheme; it is often useful for testing and simple auth implementations.
+Adds an auth scheme and strategy with name `name` to `server`.  Its implementation is given by `authenticate` as described in [`server.auth.scheme()`](https://github.com/hapijs/hapi/blob/v16/API.md#serverauthschemename-scheme).  This is intended to make it simple to create a barebones auth strategy without having to create a reusable auth scheme; it is often useful for testing and simple auth implementations.
 
 ```js
 Toys.auth.strategy(server, 'simple-bearer', (request, reply) => {
