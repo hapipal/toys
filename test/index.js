@@ -5,6 +5,7 @@
 const Lab = require('lab');
 const Code = require('code');
 const Hapi = require('hapi');
+const Hoek = require('hoek');
 const Toys = require('..');
 
 // Test shortcuts
@@ -16,7 +17,7 @@ const expect = Code.expect;
 
 describe('Toys', () => {
 
-    describe('withDefaults()', () => {
+    describe('withRouteDefaults()', () => {
 
         const defaults = {
             a: 1,
@@ -33,31 +34,31 @@ describe('Toys', () => {
 
             expect(() => {
 
-                Toys.withDefaults(null)({});
+                Toys.withRouteDefaults(null)({});
             }).to.throw('Invalid defaults value: must be an object');
         });
 
         it('returns null if options is false.', () => {
 
-            const result = Toys.withDefaults(defaults)(false);
+            const result = Toys.withRouteDefaults(defaults)(false);
             expect(result).to.equal(null);
         });
 
         it('returns null if options is null.', () => {
 
-            const result = Toys.withDefaults(defaults)(null);
+            const result = Toys.withRouteDefaults(defaults)(null);
             expect(result).to.equal(null);
         });
 
         it('returns null if options is undefined.', () => {
 
-            const result = Toys.withDefaults(defaults)(undefined);
+            const result = Toys.withRouteDefaults(defaults)(undefined);
             expect(result).to.equal(null);
         });
 
         it('returns a copy of defaults if options is true.', () => {
 
-            const result = Toys.withDefaults(defaults)(true);
+            const result = Toys.withRouteDefaults(defaults)(true);
             expect(result).to.equal(defaults);
         });
 
@@ -74,7 +75,7 @@ describe('Toys', () => {
                 }
             };
 
-            const result = Toys.withDefaults(defaults)(obj);
+            const result = Toys.withRouteDefaults(defaults)(obj);
             expect(result.c.e).to.equal([4]);
             expect(result.a).to.equal(1);
             expect(result.b).to.equal(2);
@@ -95,7 +96,7 @@ describe('Toys', () => {
                 }
             };
 
-            const results = Toys.withDefaults(defaults)([obj, obj, obj]);
+            const results = Toys.withRouteDefaults(defaults)([obj, obj, obj]);
 
             expect(results).to.have.length(3);
 
@@ -122,32 +123,85 @@ describe('Toys', () => {
                 }
             };
 
-            const withDefaults = Toys.withDefaults(defaults);
-            const once = withDefaults(obj);
-            const twice = withDefaults(obj);
+            const withRouteDefaults = Toys.withRouteDefaults(defaults);
+            const once = withRouteDefaults(obj);
+            const twice = withRouteDefaults(obj);
 
             expect(once).to.equal(twice);
         });
 
-        it('applies object to defaults with null.', () => {
+        it('shallow copies route-specific properties.', () => {
 
-            const obj = {
-                a: null,
-                c: {
-                    e: [4]
+            const shallowDefaults = {
+                config: {
+                    anything: { x: 1 },
+                    validate: {
+                        query: { defaults: true },
+                        payload: { defaults: true },
+                        headers: { defaults: true },
+                        params: { defaults: true }
+                    },
+                    bind: { defaults: true }
                 },
-                f: 0,
-                g: {
-                    h: 5
+                options: {
+                    anything: { x: 1 },
+                    validate: {
+                        query: { defaults: true },
+                        payload: { defaults: true },
+                        headers: { defaults: true },
+                        params: { defaults: true }
+                    },
+                    bind: { defaults: true }
                 }
             };
 
-            const result = Toys.withDefaults(defaults, true)(obj);
-            expect(result.c.e).to.equal([4]);
-            expect(result.a).to.equal(null);
-            expect(result.b).to.equal(2);
-            expect(result.f).to.equal(0);
-            expect(result.g).to.equal({ h: 5 });
+            const route = {
+                config: {
+                    anything: { y: 2 },
+                    validate: {
+                        query: {},
+                        payload: {},
+                        headers: {},
+                        params: {}
+                    },
+                    bind: {}
+                },
+                options: {
+                    anything: { y: 2 },
+                    validate: {
+                        query: {},
+                        payload: {},
+                        headers: {},
+                        params: {}
+                    },
+                    bind: {}
+                }
+            };
+
+            const result = Toys.withRouteDefaults(shallowDefaults)(route);
+
+            expect(result).to.equal({
+                config: {
+                    anything: { x:1, y: 2 },
+                    validate: {
+                        query: {},
+                        payload: {},
+                        headers: {},
+                        params: {}
+                    },
+                    bind: {}
+                },
+                options: {
+                    anything: { x:1, y: 2 },
+                    validate: {
+                        query: {},
+                        payload: {},
+                        headers: {},
+                        params: {}
+                    },
+                    bind: {}
+                }
+            });
         });
 
         it('works as an instance method.', () => {
@@ -164,10 +218,10 @@ describe('Toys', () => {
             };
 
             const toys = new Toys();
-            const result = toys.withDefaults(defaults, true)(obj);
+            const result = toys.withRouteDefaults(defaults)(obj);
 
             expect(result.c.e).to.equal([4]);
-            expect(result.a).to.equal(null);
+            expect(result.a).to.equal(1);
             expect(result.b).to.equal(2);
             expect(result.f).to.equal(0);
             expect(result.g).to.equal({ h: 5 });
@@ -696,4 +750,47 @@ describe('Toys', () => {
             });
         });
     });
+
+    describe('noop', () => {
+
+        it('is a hapi plugin that does nothing and can be registered multiple times.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.noop.register).to.shallow.equal(Hoek.ignore);
+
+            await server.register(Toys.noop);
+
+            expect(server.registrations).to.only.contain('noop');
+
+            await server.register(Toys.noop);
+
+            expect(server.registrations).to.only.contain('noop');
+        });
+
+        it('works as an instance property.', async () => {
+
+            const server = Hapi.server();
+            const toys = new Toys();
+
+            expect(toys.noop.register).to.shallow.equal(Hoek.ignore);
+
+            await server.register(toys.noop);
+
+            expect(server.registrations).to.only.contain('noop');
+
+            await server.register(toys.noop);
+
+            expect(server.registrations).to.only.contain('noop');
+        });
+    });
+
+    describe('async event()', () => {});
+    describe('async stream()', () => {});
+    describe('options()', () => {});
+    describe('realm()', () => {});
+    describe('rootRealm()', () => {});
+    describe('state()', () => {});
+    describe('rootState()', () => {});
+    describe('forEachAncestorRealm()', () => {});
 });
