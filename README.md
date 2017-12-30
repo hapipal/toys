@@ -11,7 +11,7 @@ Lead Maintainer - [Devin Ivy](https://github.com/devinivy)
 
 Toys is a collection of utilities made to reduce common boilerplate in **hapi v17+** projects, aid usage of events and streams in `async` functions (e.g. handlers and server methods), and provide versions of widely-used utilities from [Hoek](https://github.com/hapijs/hoek) optimized to perform well in hot code paths such as route handlers.
 
-Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyserver-name-authenticate), [`Toys.reacher()`](API.md#toysreacherchain-options), and [`Toys.withRouteDefaults()`](API.md#toyswithroutedefaultsdefaults-isnulloverride).  The [API Reference](API.md) is also filled with examples.
+Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyserver-name-authenticate), [`Toys.reacher()`](API.md#toysreacherchain-options), and [`Toys.withRouteDefaults()`](API.md#toyswithroutedefaultsdefaults).  The [API Reference](API.md) is also filled with examples.
 
 ```js
 const Hapi = require('hapi');

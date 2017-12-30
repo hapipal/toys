@@ -229,6 +229,7 @@ const Fs = require('fs');
 const Crypto = require('crypto');
 
 // Hash a file and cache the result by filename
+
 server.method({
     name: 'hash',
     method: async (filename) => {

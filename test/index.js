@@ -1180,8 +1180,8 @@ describe('Toys', () => {
 
         it('throws when passed an unfamiliar object.', () => {
 
-            expect(() => Toys.options({})).to.throw('Must pass a request, server, route, response toolkit, or realm');
-            expect(() => Toys.options(null)).to.throw('Must pass a request, server, route, response toolkit, or realm');
+            expect(() => Toys.options({})).to.throw('Must pass a server, request, route, response toolkit, or realm');
+            expect(() => Toys.options(null)).to.throw('Must pass a server, request, route, response toolkit, or realm');
         });
 
         it('works as an instance method, defaulting to get this.server\'s plugin options.', async () => {
@@ -1320,8 +1320,8 @@ describe('Toys', () => {
 
         it('throws when passed an unfamiliar object.', () => {
 
-            expect(() => Toys.realm({})).to.throw('Must pass a request, server, route, response toolkit, or realm');
-            expect(() => Toys.realm(null)).to.throw('Must pass a request, server, route, response toolkit, or realm');
+            expect(() => Toys.realm({})).to.throw('Must pass a server, request, route, response toolkit, or realm');
+            expect(() => Toys.realm(null)).to.throw('Must pass a server, request, route, response toolkit, or realm');
         });
 
         it('works as an instance method, defaulting to get this.server\'s realm.', async () => {
