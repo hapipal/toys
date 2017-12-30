@@ -2,6 +2,8 @@
 
 // Load modules
 
+const EventEmitter = require('events');
+const Stream = require('stream');
 const Lab = require('lab');
 const Code = require('code');
 const Hapi = require('hapi');
@@ -785,8 +787,132 @@ describe('Toys', () => {
         });
     });
 
-    describe('async event()', () => {});
-    describe('async stream()', () => {});
+    describe('async event()', () => {
+
+        it('waits for an event to be emitted.', async () => {
+
+            const emitter = new EventEmitter();
+
+            let emitted = false;
+
+            emitter.once('my-event', () => {
+
+                emitted = true;
+            });
+
+            setTimeout(() => emitter.emit('my-event', 'value'));
+
+            const myEvent = Toys.event(emitter, 'my-event');
+
+            expect(emitted).to.equal(false);
+            expect(emitter.listenerCount('my-event')).to.equal(2);
+            expect(emitter.listenerCount('error')).to.equal(1);
+
+            const value = await myEvent;
+
+            expect(value).to.equal('value');
+            expect(emitted).to.equal(true);
+            expect(emitter.listenerCount('my-event')).to.equal(0);
+            expect(emitter.listenerCount('error')).to.equal(0);
+        });
+
+        it('throws if an error event is emitted.', async () => {
+
+            const emitter = new EventEmitter();
+
+            let emitted = false;
+
+            emitter.once('error', () => {
+
+                emitted = true;
+            });
+
+            setTimeout(() => emitter.emit('error', new Error('Oops!')));
+
+            const myEvent = Toys.event(emitter, 'my-event');
+
+            expect(emitted).to.equal(false);
+            expect(emitter.listenerCount('my-event')).to.equal(1);
+            expect(emitter.listenerCount('error')).to.equal(2);
+
+            await expect(myEvent).to.reject('Oops!');
+
+            expect(emitted).to.equal(true);
+            expect(emitter.listenerCount('my-event')).to.equal(0);
+            expect(emitter.listenerCount('error')).to.equal(0);
+        });
+
+        it('works as an instance method.', async () => {
+
+            const toys = new Toys();
+            const emitter = new EventEmitter();
+
+            let emitted = false;
+
+            emitter.once('my-event', () => {
+
+                emitted = true;
+            });
+
+            setTimeout(() => emitter.emit('my-event', 'value'));
+
+            const myEvent = toys.event(emitter, 'my-event');
+
+            expect(emitted).to.equal(false);
+
+            const value = await myEvent;
+
+            expect(value).to.equal('value');
+            expect(emitted).to.equal(true);
+        });
+    });
+
+    describe('async stream()', () => {
+
+        it('waits for a readable stream to end.', async () => {
+
+            let i = 0;
+
+            const counter = new Stream.Readable({
+                read() {
+
+                    if (i >= 10) {
+                        return this.push(null);
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                }
+            });
+
+            const data = [];
+            counter.on('data', (count) => data.push(count.toString()));
+
+            expect(data).to.equal([]);
+
+            const value = await Toys.stream(counter);
+
+            expect(value).to.not.exist();
+            expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+        });
+
+        it('waits for a writable stream to finish.', () => {
+
+        });
+
+        it('waits for a duplex stream to end and finish.', () => {
+
+        });
+
+        it('throws on a stream error', () => {
+
+        });
+
+        it('works as an instance method.', async () => {
+
+        });
+    });
+
     describe('options()', () => {});
     describe('realm()', () => {});
     describe('rootRealm()', () => {});
