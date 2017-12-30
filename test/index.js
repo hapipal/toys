@@ -763,11 +763,11 @@ describe('Toys', () => {
 
             await server.register(Toys.noop);
 
-            expect(server.registrations).to.only.contain('noop');
+            expect(server.registrations).to.only.contain('toys-noop');
 
             await server.register(Toys.noop);
 
-            expect(server.registrations).to.only.contain('noop');
+            expect(server.registrations).to.only.contain('toys-noop');
         });
 
         it('works as an instance property.', async () => {
@@ -779,11 +779,11 @@ describe('Toys', () => {
 
             await server.register(toys.noop);
 
-            expect(server.registrations).to.only.contain('noop');
+            expect(server.registrations).to.only.contain('toys-noop');
 
             await server.register(toys.noop);
 
-            expect(server.registrations).to.only.contain('noop');
+            expect(server.registrations).to.only.contain('toys-noop');
         });
     });
 

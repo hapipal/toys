@@ -88,7 +88,7 @@ server.ext([
 
         return h.continue;        
     }, {
-        sandbox: true
+        sandbox: 'plugin'
     })
 ]);
 ```
@@ -177,3 +177,136 @@ server.route({
     }
 });
 ```
+
+### `Toys.noop`
+> As instance, `toys.noop`
+
+This is a plugin named `toys-noop` that does nothing and can be registered multiple times.  This can be useful when conditionally registering a plugin in a list or [glue](https://github.com/hapijs/glue) manifest.
+
+```js
+await server.register([
+    require('./my-plugin-a'),
+    require('./my-plugin-b'),
+    (process.env.NODE_ENV === 'production') ? Toys.noop : require('lout')
+]);
+```
+
+### `async Toys.event(emitter, eventName)`
+> As instance, `async toys.event(emitter, eventName)`
+
+Waits for `emitter` to emit an event named `eventName` and returns the first value passed to the event's listener.  Throws if an event named `'error'` is emitted.  This can be useful when waiting for an event in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
+
+```js
+const ChildProcess = require('child_process');
+
+server.route({
+    method: 'get',
+    path: '/report/user/{id}',
+    options: {
+        handler: async (request) => {
+
+            const generateReport = ChildProcess.fork(`${__dirname}/report.js`);
+
+            generateReport.send({ userId: request.params.id });
+
+            const report = await Toys.event(generateReport, 'message');
+
+            generateReport.disconnect();
+
+            return report;
+        }
+    }
+});
+```
+
+### `async Toys.stream(stream)`
+> As instance, `async toys.stream(stream)`
+
+Waits for a readable `stream` to end, a writable `stream` to finish, or a duplex `stream` to both end and finish.  Throws an error if `stream` emits an `'error'` event.  This can be useful when waiting for a stream to process in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
+
+```js
+const Fs = require('fs');
+const Crypto = require('crypto');
+
+// Hash a file and cache the result by filename
+server.method({
+    name: 'hash',
+    method: async (filename) => {
+
+        const hasher = Crypto.createHash('sha256');
+        const input = Fs.createReadStream(filename);
+        const output = input.pipe(hasher);
+
+        let hash = '';
+        output.on('data', (chunk) => {
+
+            hash += chunk.toString('hex');
+        });
+
+        await Toys.stream(output);
+
+        return hash;
+    },
+    options: {
+        cache: {
+            generateTimeout: 1000,
+            expiresIn: 2000
+        }
+    }
+});
+```
+
+### `Toys.options(obj)`
+> As instance, `toys.options([obj])`
+
+Given `obj` as a server, request, route, response toolkit, or realm, returns the relevant plugin options.  If `obj` is none of the above then this method will throw an error.  When used as an instance `obj` defaults to `toys.server`.
+
+```js
+// Here is a route configuration in its own file.
+//
+// The route is added to the server somewhere else, but we still
+// need that server's plugin options for use in the handler.
+
+module.exports = {
+    method: 'post',
+    path: '/user/{id}/resend-verification-email',
+    handler: async (request) {
+
+        // fromAddress configured at plugin registration time, e.g. no-reply@toys.biz
+        const { fromAddress } = Toys.options(request);
+        const user = await server.methods.getUser(request.params.id);
+
+        await server.methods.sendVerificationEmail({
+            to: user.email,
+            from: fromAddress
+        });
+
+        return { success: true };
+    }
+};
+```
+
+### `Toys.realm(obj)`
+> As instance, `toys.realm([obj])`
+
+Given `obj` as a server, request, route, response toolkit, or realm, returns the relevant realm.  If `obj` is none of the above then this method will throw an error.  When used as an instance `obj` defaults to `toys.server`.
+
+### `Toys.rootRealm(realm)`
+> As instance, `toys.rootRealm()`
+
+Given a `realm` this method follows the `realm.parent` chain and returns the topmost realm, known as the "root realm."  When used as an instance, returns `toys.server.realm`'s root realm.
+
+### `Toys.state(realm, pluginName)`
+> As instance, `toys.state(pluginName)`
+
+Returns the plugin state for `pluginName` within `realm` (`realm.plugins[pluginName]`), and initializes it to an empty object if it is not already set.  When used as an instance, returns the plugin state within `toys.server.realm`.
+
+### `Toys.rootState(realm, pluginName)`
+> As instance, `toys.rootState(pluginName)`
+
+Returns the plugin state for `pluginName` within `realm`'s [root realm](#toysrootrealmrealm), and initializes it to an empty object if it is not already set.  When used as an instance, returns the plugin state within `toys.server.realm`'s root realm.
+
+### `Toys.forEachAncestorRealm(realm, fn)`
+> As instance, `toys.forEachAncestorRealm(fn)`
+
+Walks up the `realm.parent` chain and calls `fn(realm)` for each realm, starting with the passed `realm`.  When used as an instance, this method starts with `toys.server.realm`.
