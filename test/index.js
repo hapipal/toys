@@ -885,38 +885,693 @@ describe('Toys', () => {
                 }
             });
 
+            let ended = false;
+            counter.once('end', () => {
+
+                ended = true;
+            });
+
             const data = [];
             counter.on('data', (count) => data.push(count.toString()));
 
+            expect(ended).to.equal(false);
             expect(data).to.equal([]);
 
             const value = await Toys.stream(counter);
 
             expect(value).to.not.exist();
+            expect(ended).to.equal(true);
             expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
         });
 
-        it('waits for a writable stream to finish.', () => {
+        it('waits for a writable stream to finish.', async () => {
 
+            const data = [];
+
+            const toArray = new Stream.Writable({
+                write(chunk, encoding, cb) {
+
+                    process.nextTick(() => {
+
+                        data.push(chunk.toString());
+
+                        return cb();
+                    });
+                }
+            });
+
+            let finished = false;
+            toArray.once('finish', () => {
+
+                finished = true;
+            });
+
+            for (let i = 0; i < 10; ++i) {
+                toArray.write(`${i}`);
+            }
+
+            process.nextTick(() => toArray.end());
+
+            expect(finished).to.equal(false);
+            expect(data).to.equal([]);
+
+            const value = await Toys.stream(toArray);
+
+            expect(value).to.not.exist();
+            expect(finished).to.equal(true);
+            expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
         });
 
-        it('waits for a duplex stream to end and finish.', () => {
+        it('waits for a duplex stream to end and finish.', async () => {
 
+            let i = 0;
+            const data = [];
+
+            const countToArray = new Stream.Duplex({
+                read() {
+
+                    if (i >= 10) {
+                        return this.push(null);
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                },
+                write(chunk, encoding, cb) {
+
+                    process.nextTick(() => {
+
+                        data.push(chunk.toString());
+
+                        return cb();
+                    });
+                }
+            });
+
+            let ended = false;
+            countToArray.once('end', () => {
+
+                ended = true;
+            });
+
+            let finished = false;
+            countToArray.once('finish', () => {
+
+                finished = true;
+            });
+
+            countToArray.pipe(countToArray);
+
+            expect(ended).to.equal(false);
+            expect(finished).to.equal(false);
+            expect(data).to.equal([]);
+
+            const value = await Toys.stream(countToArray);
+
+            expect(value).to.not.exist();
+            expect(ended).to.equal(true);
+            expect(finished).to.equal(true);
+            expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
         });
 
-        it('throws on a stream error', () => {
+        it('throws on a stream error.', async () => {
 
+            let i = 0;
+
+            const counter = new Stream.Readable({
+                read() {
+
+                    if (i >= 5) {
+                        return process.nextTick(() => this.emit('error', new Error('Oops!')));
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                }
+            });
+
+            let ended = false;
+            counter.once('end', () => {
+
+                ended = true;
+            });
+
+            const data = [];
+            counter.on('data', (count) => data.push(count.toString()));
+
+            expect(ended).to.equal(false);
+            expect(data).to.equal([]);
+
+            await expect(Toys.stream(counter)).to.reject('Oops!');
+
+            expect(ended).to.equal(false);
+            expect(data).to.equal(['0', '1', '2', '3', '4']);
         });
 
         it('works as an instance method.', async () => {
 
+            let i = 0;
+
+            const counter = new Stream.Readable({
+                read() {
+
+                    if (i >= 10) {
+                        return this.push(null);
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                }
+            });
+
+            let ended = false;
+            counter.once('end', () => {
+
+                ended = true;
+            });
+
+            const data = [];
+            counter.on('data', (count) => data.push(count.toString()));
+
+            expect(ended).to.equal(false);
+            expect(data).to.equal([]);
+
+            const toys = new Toys();
+            const value = await toys.stream(counter);
+
+            expect(value).to.not.exist();
+            expect(ended).to.equal(true);
+            expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
         });
     });
 
-    describe('options()', () => {});
-    describe('realm()', () => {});
-    describe('rootRealm()', () => {});
-    describe('state()', () => {});
-    describe('rootState()', () => {});
-    describe('forEachAncestorRealm()', () => {});
+    describe('options()', () => {
+
+        it('gets plugin options from a server.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.options(server)).to.shallow.equal(server.realm.pluginOptions);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    expect(Toys.options(srv)).to.shallow.equal(srv.realm.pluginOptions);
+                }
+            });
+        });
+
+        it('gets plugin options from a request.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request) {
+
+                            expect(Toys.options(request)).to.shallow.equal(request.route.realm.pluginOptions);
+                            expect(Toys.options(request)).to.shallow.equal(srv.realm.pluginOptions);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets plugin options from a route.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request) {
+
+                            expect(Toys.options(request.route)).to.shallow.equal(request.route.realm.pluginOptions);
+                            expect(Toys.options(request.route)).to.shallow.equal(srv.realm.pluginOptions);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets plugin options from a response toolkit.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request, h) {
+
+                            expect(Toys.options(h)).to.shallow.equal(h.realm.pluginOptions);
+                            expect(Toys.options(h)).to.shallow.equal(srv.realm.pluginOptions);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets plugin options from a realm.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.options(server.realm)).to.shallow.equal(server.realm.pluginOptions);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    expect(Toys.options(srv.realm)).to.shallow.equal(srv.realm.pluginOptions);
+                }
+            });
+        });
+
+        it('throws when passed an unfamiliar object.', () => {
+
+            expect(() => Toys.options({})).to.throw('Must pass a request, server, route, response toolkit, or realm');
+            expect(() => Toys.options(null)).to.throw('Must pass a request, server, route, response toolkit, or realm');
+        });
+
+        it('works as an instance method, defaulting to get this.server\'s plugin options.', async () => {
+
+            const server = Hapi.server();
+            const toys1 = new Toys(server);
+
+            expect(toys1.options(server.realm)).to.shallow.equal(server.realm.pluginOptions);
+            expect(toys1.options()).to.shallow.equal(server.realm.pluginOptions);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    const toys2 = new Toys(srv);
+
+                    expect(toys2.options(srv.realm)).to.shallow.equal(srv.realm.pluginOptions);
+                    expect(toys2.options()).to.shallow.equal(srv.realm.pluginOptions);
+                }
+            });
+        });
+    });
+
+    describe('realm()', () => {
+
+        it('gets realm from a server.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.realm(server)).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    expect(Toys.realm(srv)).to.shallow.equal(srv.realm);
+                }
+            });
+        });
+
+        it('gets realm from a request.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request) {
+
+                            expect(Toys.realm(request)).to.shallow.equal(request.route.realm);
+                            expect(Toys.realm(request)).to.shallow.equal(srv.realm);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets realm from a route.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request) {
+
+                            expect(Toys.realm(request.route)).to.shallow.equal(request.route.realm);
+                            expect(Toys.realm(request.route)).to.shallow.equal(srv.realm);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets realm from a response toolkit.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request, h) {
+
+                            expect(Toys.realm(h)).to.shallow.equal(h.realm);
+                            expect(Toys.realm(h)).to.shallow.equal(srv.realm);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets realm from a realm.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.realm(server.realm)).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    expect(Toys.realm(srv.realm)).to.shallow.equal(srv.realm);
+                }
+            });
+        });
+
+        it('throws when passed an unfamiliar object.', () => {
+
+            expect(() => Toys.realm({})).to.throw('Must pass a request, server, route, response toolkit, or realm');
+            expect(() => Toys.realm(null)).to.throw('Must pass a request, server, route, response toolkit, or realm');
+        });
+
+        it('works as an instance method, defaulting to get this.server\'s realm.', async () => {
+
+            const server = Hapi.server();
+            const toys1 = new Toys(server);
+
+            expect(toys1.realm(server.realm)).to.shallow.equal(server.realm);
+            expect(toys1.realm()).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    const toys2 = new Toys(srv);
+
+                    expect(toys2.realm(srv.realm)).to.shallow.equal(srv.realm);
+                    expect(toys2.realm()).to.shallow.equal(srv.realm);
+                }
+            });
+        });
+    });
+
+    describe('rootRealm()', () => {
+
+        it('given a realm, returns the root server\'s realm.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.rootRealm(server.realm)).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin-a',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-a1',
+                        register(srvA1) {
+
+                            expect(Toys.rootRealm(srvA1.realm)).to.shallow.equal(server.realm);
+                        }
+                    });
+                }
+            });
+        });
+
+        it('works as an instance method, returning this.server\'s root realm.', async () => {
+
+            const server = Hapi.server();
+            const toys = new Toys(server);
+
+            expect(toys.rootRealm()).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin-a',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-a1',
+                        register(srvA1) {
+
+                            const toysA1 = new Toys(srvA1);
+                            expect(toysA1.rootRealm()).to.shallow.equal(server.realm);
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    describe('state()', () => {
+
+        it('returns/initializes plugin state given a realm and plugin name.', async () => {
+
+            const server = Hapi.server();
+            const state = () => Toys.state(server.realm, 'root');
+
+            expect(server.realm.plugins.root).to.not.exist();
+            expect(state()).to.shallow.equal(state());
+            expect(state()).to.shallow.equal(server.realm.plugins.root);
+            expect(state()).to.equal({});
+
+            await server.register({
+                name: 'plugin-a',
+                register(srv) {
+
+                    const stateA = () => Toys.state(srv.realm, 'plugin-a');
+
+                    expect(srv.realm.plugins['plugin-a']).to.not.exist();
+                    expect(stateA()).to.shallow.equal(stateA());
+                    expect(stateA()).to.shallow.equal(srv.realm.plugins['plugin-a']);
+                    expect(stateA()).to.equal({});
+                }
+            });
+        });
+
+        it('works as instance method, using this.server\'s realm.', async () => {
+
+            const server = Hapi.server();
+            const toys = new Toys(server);
+            const state = () => toys.state('root');
+
+            expect(server.realm.plugins.root).to.not.exist();
+            expect(state()).to.shallow.equal(state());
+            expect(state()).to.shallow.equal(server.realm.plugins.root);
+            expect(state()).to.equal({});
+
+            await server.register({
+                name: 'plugin-a',
+                register(srv) {
+
+                    const toysA = new Toys(srv);
+                    const stateA = () => toysA.state('plugin-a');
+
+                    expect(srv.realm.plugins['plugin-a']).to.not.exist();
+                    expect(stateA()).to.shallow.equal(stateA());
+                    expect(stateA()).to.shallow.equal(srv.realm.plugins['plugin-a']);
+                    expect(stateA()).to.equal({});
+                }
+            });
+        });
+    });
+
+    describe('rootState()', () => {
+
+        it('given a realm, returns the root server\'s realm.', async () => {
+
+            const server = Hapi.server();
+            const state = () => Toys.rootState(server.realm, 'root');
+
+            expect(server.realm.plugins.root).to.not.exist();
+            expect(state()).to.shallow.equal(state());
+            expect(state()).to.shallow.equal(server.realm.plugins.root);
+            expect(state()).to.equal({});
+
+            await server.register({
+                name: 'plugin-a',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-a1',
+                        register(srvA1) {
+
+                            const stateA1 = () => Toys.rootState(srvA1.realm, 'plugin-a1');
+
+                            expect(server.realm.plugins['plugin-a1']).to.not.exist();
+                            expect(stateA1()).to.shallow.equal(stateA1());
+                            expect(stateA1()).to.shallow.equal(server.realm.plugins['plugin-a1']);
+                            expect(stateA1()).to.equal({});
+                        }
+                    });
+                }
+            });
+        });
+
+        it('works as an instance method, using this.server\'s realm.', async () => {
+
+            const server = Hapi.server();
+            const toys = new Toys(server);
+            const state = () => toys.rootState('root');
+
+            expect(server.realm.plugins.root).to.not.exist();
+            expect(state()).to.shallow.equal(state());
+            expect(state()).to.shallow.equal(server.realm.plugins.root);
+            expect(state()).to.equal({});
+
+            await server.register({
+                name: 'plugin-a',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-a1',
+                        register(srvA1) {
+
+                            const toysA1 = new Toys(srvA1);
+                            const stateA1 = () => toysA1.rootState('plugin-a1');
+
+                            expect(server.realm.plugins['plugin-a1']).to.not.exist();
+                            expect(stateA1()).to.shallow.equal(stateA1());
+                            expect(stateA1()).to.shallow.equal(server.realm.plugins['plugin-a1']);
+                            expect(stateA1()).to.equal({});
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    describe('forEachAncestorRealm()', () => {
+
+        it('calls a function for each ancestor realm up to the root realm', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin-a',
+                register() {}
+            });
+
+            await server.register({
+                name: 'plugin-b',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-b1',
+                        register(srvB1) {
+
+                            const realms = [];
+                            Toys.forEachAncestorRealm(srvB1.realm, (realm) => realms.push(realm));
+
+                            expect(realms).to.have.length(3);
+                            expect(realms[0]).to.shallow.equal(srvB1.realm);
+                            expect(realms[1]).to.shallow.equal(srvB.realm);
+                            expect(realms[2]).to.shallow.equal(server.realm);
+                        }
+                    });
+                }
+            });
+        });
+
+        it('works as an instance method, using this.server\'s realm.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin-a',
+                register() {}
+            });
+
+            await server.register({
+                name: 'plugin-b',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-b1',
+                        register(srvB1) {
+
+                            const toysB1 = new Toys(srvB1);
+
+                            const realms = [];
+                            toysB1.forEachAncestorRealm((realm) => realms.push(realm));
+
+                            expect(realms).to.have.length(3);
+                            expect(realms[0]).to.shallow.equal(srvB1.realm);
+                            expect(realms[1]).to.shallow.equal(srvB.realm);
+                            expect(realms[2]).to.shallow.equal(server.realm);
+                        }
+                    });
+                }
+            });
+        });
+    });
 });
