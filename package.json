@@ -1,6 +1,6 @@
 {
   "name": "toys",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The hapi utility toy chest",
   "main": "lib/index.js",
   "directories": {
