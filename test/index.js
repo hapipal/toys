@@ -2,11 +2,12 @@
 
 // Load modules
 
+const EventEmitter = require('events');
+const Stream = require('stream');
 const Lab = require('lab');
 const Code = require('code');
 const Hapi = require('hapi');
-const Boom = require('boom');
-const Pinkie = require('pinkie');
+const Hoek = require('hoek');
 const Toys = require('..');
 
 // Test shortcuts
@@ -18,7 +19,7 @@ const expect = Code.expect;
 
 describe('Toys', () => {
 
-    describe('withDefaults()', () => {
+    describe('withRouteDefaults()', () => {
 
         const defaults = {
             a: 1,
@@ -31,44 +32,39 @@ describe('Toys', () => {
             g: 'test'
         };
 
-        it('throws when target is null.', (done) => {
+        it('throws when target is null.', () => {
 
             expect(() => {
 
-                Toys.withDefaults(null)({});
+                Toys.withRouteDefaults(null)({});
             }).to.throw('Invalid defaults value: must be an object');
-            done();
         });
 
-        it('returns null if options is false.', (done) => {
+        it('returns null if options is false.', () => {
 
-            const result = Toys.withDefaults(defaults)(false);
+            const result = Toys.withRouteDefaults(defaults)(false);
             expect(result).to.equal(null);
-            done();
         });
 
-        it('returns null if options is null.', (done) => {
+        it('returns null if options is null.', () => {
 
-            const result = Toys.withDefaults(defaults)(null);
+            const result = Toys.withRouteDefaults(defaults)(null);
             expect(result).to.equal(null);
-            done();
         });
 
-        it('returns null if options is undefined.', (done) => {
+        it('returns null if options is undefined.', () => {
 
-            const result = Toys.withDefaults(defaults)(undefined);
+            const result = Toys.withRouteDefaults(defaults)(undefined);
             expect(result).to.equal(null);
-            done();
         });
 
-        it('returns a copy of defaults if options is true.', (done) => {
+        it('returns a copy of defaults if options is true.', () => {
 
-            const result = Toys.withDefaults(defaults)(true);
+            const result = Toys.withRouteDefaults(defaults)(true);
             expect(result).to.equal(defaults);
-            done();
         });
 
-        it('applies object to defaults.', (done) => {
+        it('applies object to defaults.', () => {
 
             const obj = {
                 a: null,
@@ -81,16 +77,15 @@ describe('Toys', () => {
                 }
             };
 
-            const result = Toys.withDefaults(defaults)(obj);
+            const result = Toys.withRouteDefaults(defaults)(obj);
             expect(result.c.e).to.equal([4]);
             expect(result.a).to.equal(1);
             expect(result.b).to.equal(2);
             expect(result.f).to.equal(0);
             expect(result.g).to.equal({ h: 5 });
-            done();
         });
 
-        it('maps array objects over defaults.', (done) => {
+        it('maps array objects over defaults.', () => {
 
             const obj = {
                 a: null,
@@ -103,7 +98,7 @@ describe('Toys', () => {
                 }
             };
 
-            const results = Toys.withDefaults(defaults)([obj, obj, obj]);
+            const results = Toys.withRouteDefaults(defaults)([obj, obj, obj]);
 
             expect(results).to.have.length(3);
 
@@ -115,11 +110,9 @@ describe('Toys', () => {
                 expect(result.f).to.equal(0);
                 expect(result.g).to.equal({ h: 5 });
             });
-
-            done();
         });
 
-        it('applies object to defaults multiple times.', (done) => {
+        it('applies object to defaults multiple times.', () => {
 
             const obj = {
                 a: null,
@@ -132,37 +125,88 @@ describe('Toys', () => {
                 }
             };
 
-            const withDefaults = Toys.withDefaults(defaults);
-            const once = withDefaults(obj);
-            const twice = withDefaults(obj);
+            const withRouteDefaults = Toys.withRouteDefaults(defaults);
+            const once = withRouteDefaults(obj);
+            const twice = withRouteDefaults(obj);
 
             expect(once).to.equal(twice);
-            done();
         });
 
-        it('applies object to defaults with null.', (done) => {
+        it('shallow copies route-specific properties.', () => {
 
-            const obj = {
-                a: null,
-                c: {
-                    e: [4]
+            const shallowDefaults = {
+                config: {
+                    anything: { x: 1 },
+                    validate: {
+                        query: { defaults: true },
+                        payload: { defaults: true },
+                        headers: { defaults: true },
+                        params: { defaults: true }
+                    },
+                    bind: { defaults: true }
                 },
-                f: 0,
-                g: {
-                    h: 5
+                options: {
+                    anything: { x: 1 },
+                    validate: {
+                        query: { defaults: true },
+                        payload: { defaults: true },
+                        headers: { defaults: true },
+                        params: { defaults: true }
+                    },
+                    bind: { defaults: true }
                 }
             };
 
-            const result = Toys.withDefaults(defaults, true)(obj);
-            expect(result.c.e).to.equal([4]);
-            expect(result.a).to.equal(null);
-            expect(result.b).to.equal(2);
-            expect(result.f).to.equal(0);
-            expect(result.g).to.equal({ h: 5 });
-            done();
+            const route = {
+                config: {
+                    anything: { y: 2 },
+                    validate: {
+                        query: {},
+                        payload: {},
+                        headers: {},
+                        params: {}
+                    },
+                    bind: {}
+                },
+                options: {
+                    anything: { y: 2 },
+                    validate: {
+                        query: {},
+                        payload: {},
+                        headers: {},
+                        params: {}
+                    },
+                    bind: {}
+                }
+            };
+
+            const result = Toys.withRouteDefaults(shallowDefaults)(route);
+
+            expect(result).to.equal({
+                config: {
+                    anything: { x:1, y: 2 },
+                    validate: {
+                        query: {},
+                        payload: {},
+                        headers: {},
+                        params: {}
+                    },
+                    bind: {}
+                },
+                options: {
+                    anything: { x:1, y: 2 },
+                    validate: {
+                        query: {},
+                        payload: {},
+                        headers: {},
+                        params: {}
+                    },
+                    bind: {}
+                }
+            });
         });
 
-        it('works as an instance method.', (done) => {
+        it('works as an instance method.', () => {
 
             const obj = {
                 a: null,
@@ -176,432 +220,13 @@ describe('Toys', () => {
             };
 
             const toys = new Toys();
-            const result = toys.withDefaults(defaults, true)(obj);
+            const result = toys.withRouteDefaults(defaults)(obj);
 
             expect(result.c.e).to.equal([4]);
-            expect(result.a).to.equal(null);
+            expect(result.a).to.equal(1);
             expect(result.b).to.equal(2);
             expect(result.f).to.equal(0);
             expect(result.g).to.equal({ h: 5 });
-            done();
-        });
-    });
-
-    describe('handler()', () => {
-
-        it('catches failure in async handler, maintaining context.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.bind({ ctx: 'aware' });
-
-            server.route({
-                method: 'get',
-                path: '/',
-                handler: Toys.handler(function (request, reply) {
-
-                    return Promise.reject(Boom.badData(`Context ${this.ctx}`)); // async fns are simply promise-returning
-                })
-            });
-
-            server.inject('/', (res) => {
-
-                expect(res.statusCode).to.equal(422);
-                expect(res.result.message).to.equal('Context aware');
-                done();
-            });
-        });
-
-        it('accepts string notation, as plain hander.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('handler.get', (request, reply) => {
-
-                return reply(null, request.params.x + request.params.y).code(299);
-            });
-
-            server.route({
-                method: 'get',
-                path: '/{x}/{y}',
-                handler: Toys.handler(server, 'handler.get')
-            });
-
-            server.inject('/a/b', (res) => {
-
-                expect(res.statusCode).to.equal(299);
-                expect(res.result).to.equal('ab');
-                done();
-            });
-        });
-
-        it('accepts string notation, with arguments.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('perform.addition', (a, b) =>  Number(a) + Number(b), {
-                callback: false
-            });
-
-            server.route({
-                method: 'get',
-                path: '/{x}/{y}',
-                handler: Toys.handler(server, 'perform.addition(params.x, params.y)')
-            });
-
-            server.inject('/2/7', (res) => {
-
-                expect(res.result).to.equal(9);
-                done();
-            });
-        });
-
-        it('accepts string notation, with zero args.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('the.answer', () => 42, {
-                callback: false
-            });
-
-            server.route({
-                method: 'get',
-                path: '/',
-                handler: Toys.handler(server, 'the.answer()')
-            });
-
-            server.inject('/', (res) => {
-
-                expect(res.result).to.equal(42);
-                done();
-            });
-        });
-
-        it('accepts string notation, with a callback.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('calling.back', (a, b, cb) => {
-
-                return cb(null, Number(a) + Number(b));
-            });
-
-            server.route({
-                method: 'get',
-                path: '/cb/{a}/{b}',
-                handler: Toys.handler(server, 'calling.back(params.a, params.b, cb)')
-            });
-
-            server.route({
-                method: 'get',
-                path: '/callback/{a}/{b}',
-                handler: Toys.handler(server, 'calling.back(params.a, params.b, callback)')
-            });
-
-            server.route({
-                method: 'get',
-                path: '/next/{a}/{b}',
-                handler: Toys.handler(server, 'calling.back(params.a, params.b, next)')
-            });
-
-            server.inject('/cb/1/2', (res1) => {
-
-                expect(res1.result).to.equal(3);
-
-                server.inject('/callback/2/4', (res2) => {
-
-                    expect(res2.result).to.equal(6);
-
-                    server.inject('/next/4/8', (res3) => {
-
-                        expect(res3.result).to.equal(12);
-                        done();
-                    });
-                });
-            });
-        });
-
-        it('logs cached server method report.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection({ routes: { log: true } });
-
-            server.method('the.answer', (cb) => cb(null, 42), {
-                cache: {
-                    expiresIn: 1000,
-                    generateTimeout: 10
-                }
-            });
-
-            server.route({
-                method: 'get',
-                path: '/',
-                handler: Toys.handler(server, 'the.answer(cb)')
-            });
-
-            server.initialize((err) => {
-
-                expect(err).to.not.exist();
-
-                server.inject('/', (res) => {
-
-                    expect(res.result).to.equal(42);
-
-                    const log = res.request.getLog('method')[0];
-
-                    expect(log).to.exist();
-                    expect(log.tags).to.equal(['handler', 'method', 'the.answer']);
-                    expect(log.internal).to.equal(false);
-                    expect(log.data.msec).to.exist();
-                    done();
-                });
-            });
-        });
-
-        it('resolves server method lazily.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('perform.operation', (a, b, cb) => cb(null, Number(a) + Number(b)));
-
-            server.route({
-                method: 'get',
-                path: '/{x}/{y}',
-                handler: Toys.handler(server, 'perform.operation(params.x, params.y, cb)')
-            });
-
-            server.methods.perform.operation = (a, b, cb) => cb(null, Number(a) * Number(b));
-
-            server.inject('/2/7', (res) => {
-
-                expect(res.result).to.equal(14);
-                done();
-            });
-        });
-
-        it('works as an instance method with string notation.', (done) => {
-
-            const server = new Hapi.Server();
-            const toys = new Toys(server);
-            server.connection();
-
-            server.method('perform.addition', (a, b, cb) => cb(null, Number(a) + Number(b)));
-
-            server.route({
-                method: 'get',
-                path: '/{x}/{y}',
-                handler: toys.handler('perform.addition(params.x, params.y, cb)')
-            });
-
-            server.inject('/2/7', (res) => {
-
-                expect(res.result).to.equal(9);
-                done();
-            });
-        });
-
-        it('works as an instance method with async function.', (done) => {
-
-            const server = new Hapi.Server();
-            const toys = new Toys();
-            server.connection();
-
-            server.bind({ ctx: 'aware' });
-
-            server.route({
-                method: 'get',
-                path: '/',
-                handler: toys.handler(function (request, reply) {
-
-                    return Promise.reject(Boom.badData(`Context ${this.ctx}`)); // async fns are simply promise-returning
-                })
-            });
-
-            server.inject('/', (res) => {
-
-                expect(res.statusCode).to.equal(422);
-                expect(res.result.message).to.equal('Context aware');
-                done();
-            });
-        });
-    });
-
-    describe('pre()', () => {
-
-        it('creates a route prereq with `assign` defaulting to server method\'s name.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('the.answer', (cb) => cb(null, 42));
-
-            server.route({
-                method: 'get',
-                path: '/',
-                config: {
-                    handler: (request, reply) => reply(request.pre),
-                    pre: [
-                        Toys.pre(server, 'the.answer(cb)')
-                    ]
-                }
-            });
-
-            server.inject('/', (res) => {
-
-                expect(res.result).to.equal({ 'the.answer': 42 });
-                done();
-            });
-        });
-
-        it('creates a route prereq with `assign` specified.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('the.answer', (cb) => cb(null, 42));
-
-            server.route({
-                method: 'get',
-                path: '/',
-                config: {
-                    handler: (request, reply) => reply(request.pre),
-                    pre: [
-                        Toys.pre(server, 'the.answer(cb)', 'my.answer')
-                    ]
-                }
-            });
-
-            server.inject('/', (res) => {
-
-                expect(res.result).to.equal({ 'my.answer': 42 });
-                done();
-            });
-        });
-
-        it('creates a route prereq with options.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('the.answer', (cb) => cb(null, 42));
-
-            server.route({
-                method: 'get',
-                path: '/',
-                config: {
-                    handler: (request, reply) => reply(request.pre),
-                    pre: [
-                        Toys.pre(server, 'the.answer(cb)', { assign: 'my.answer' })
-                    ]
-                }
-            });
-
-            server.inject('/', (res) => {
-
-                expect(res.result).to.equal({ 'my.answer': 42 });
-                done();
-            });
-        });
-
-        it('resolves server method lazily.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection();
-
-            server.method('perform.operation', (a, b, cb) => cb(null, Number(a) + Number(b)));
-
-            server.route({
-                method: 'get',
-                path: '/{x}/{y}',
-                config: {
-                    handler: (request, reply) => reply(request.pre),
-                    pre: [
-                        Toys.pre(server, 'perform.operation(params.x, params.y, cb)')
-                    ]
-                }
-            });
-
-            server.methods.perform.operation = (a, b, cb) => cb(null, Number(a) * Number(b));
-
-            server.inject('/2/7', (res) => {
-
-                expect(res.result).to.equal({ 'perform.operation': 14 });
-                done();
-            });
-        });
-
-        it('creates a route prereq that logs cached server method report.', (done) => {
-
-            const server = new Hapi.Server();
-            server.connection({ routes: { log: true } });
-
-            server.method('the.answer', (cb) => cb(null, 42), {
-                cache: {
-                    expiresIn: 1000,
-                    generateTimeout: 10
-                }
-            });
-
-            server.route({
-                method: 'get',
-                path: '/',
-                config: {
-                    handler: (request, reply) => reply(request.pre),
-                    pre: [
-                        Toys.pre(server, 'the.answer(cb)')
-                    ]
-                }
-            });
-
-            server.initialize((err) => {
-
-                expect(err).to.not.exist();
-
-                server.inject('/', (res) => {
-
-                    expect(res.result).to.equal({ 'the.answer': 42 });
-
-                    const log = res.request.getLog('method')[0];
-
-                    expect(log).to.exist();
-                    expect(log.tags).to.equal(['pre', 'method', 'the.answer']);
-                    expect(log.internal).to.equal(false);
-                    expect(log.data.msec).to.exist();
-                    done();
-                });
-            });
-        });
-
-        it('works as an instance method.', (done) => {
-
-            const server = new Hapi.Server();
-            const toys = new Toys(server);
-            server.connection();
-
-            server.method('the.answer', (cb) => cb(null, 42));
-
-            server.route({
-                method: 'get',
-                path: '/',
-                config: {
-                    handler: (request, reply) => reply(request.pre),
-                    pre: [
-                        toys.pre('the.answer(cb)', { assign: 'my.answer' })
-                    ]
-                }
-            });
-
-            server.inject('/', (res) => {
-
-                expect(res.result).to.equal({ 'my.answer': 42 });
-                done();
-            });
         });
     });
 
@@ -627,134 +252,113 @@ describe('Toys', () => {
 
         obj.i.x = 5;
 
-        it('returns object itself.', (done) => {
+        it('returns object itself.', () => {
 
             expect(Toys.reacher(null)(obj)).to.shallow.equal(obj);
             expect(Toys.reacher(false)(obj)).to.shallow.equal(obj);
             expect(Toys.reacher()(obj)).to.shallow.equal(obj);
-            done();
         });
 
-        it('returns first value of array.', (done) => {
+        it('returns first value of array.', () => {
 
             expect(Toys.reacher('k.0')(obj)).to.equal(4);
-            done();
         });
 
-        it('returns last value of array using negative index.', (done) => {
+        it('returns last value of array using negative index.', () => {
 
             expect(Toys.reacher('k.-2')(obj)).to.equal(9);
-            done();
         });
 
-        it('returns a valid member.', (done) => {
+        it('returns a valid member.', () => {
 
             expect(Toys.reacher('a.b.c.d')(obj)).to.equal(1);
-            done();
         });
 
-        it('returns a valid member with separator override.', (done) => {
+        it('returns a valid member with separator override.', () => {
 
             expect(Toys.reacher('a/b/c/d', '/')(obj)).to.equal(1);
-            done();
         });
 
-        it('returns undefined on null object.', (done) => {
+        it('returns undefined on null object.', () => {
 
             expect(Toys.reacher('a.b.c.d')(null)).to.equal(undefined);
-            done();
         });
 
-        it('returns undefined on missing object member.', (done) => {
+        it('returns undefined on missing object member.', () => {
 
             expect(Toys.reacher('a.b.c.d.x')(obj)).to.equal(undefined);
-            done();
         });
 
-        it('returns undefined on missing function member.', (done) => {
+        it('returns undefined on missing function member.', () => {
 
             expect(Toys.reacher('i.y', { functions: true })(obj)).to.equal(undefined);
-            done();
         });
 
-        it('throws on missing member in strict mode.', (done) => {
+        it('throws on missing member in strict mode.', () => {
 
             expect(() => {
 
                 Toys.reacher('a.b.c.o.x', { strict: true })(obj);
             }).to.throw('Missing segment o in reach path a.b.c.o.x');
-
-            done();
         });
 
-        it('returns undefined on invalid member.', (done) => {
+        it('returns undefined on invalid member.', () => {
 
             expect(Toys.reacher('a.b.c.d-.x')(obj)).to.equal(undefined);
-            done();
         });
 
-        it('returns function member.', (done) => {
+        it('returns function member.', () => {
 
             expect(typeof Toys.reacher('i')(obj)).to.equal('function');
-            done();
         });
 
-        it('returns function property.', (done) => {
+        it('returns function property.', () => {
 
             expect(Toys.reacher('i.x')(obj)).to.equal(5);
-            done();
         });
 
-        it('returns null.', (done) => {
+        it('returns null.', () => {
 
             expect(Toys.reacher('j')(obj)).to.equal(null);
-            done();
         });
 
-        it('throws on function property when functions not allowed.', (done) => {
+        it('throws on function property when functions not allowed.', () => {
 
             expect(() => {
 
                 Toys.reacher('i.x', { functions: false })(obj);
             }).to.throw('Invalid segment x in reach path i.x');
-
-            done();
         });
 
-        it('will return a default value if property is not found.', (done) => {
+        it('will return a default value if property is not found.', () => {
 
             expect(Toys.reacher('a.b.q', { default: 'defaultValue' })(obj)).to.equal('defaultValue');
-            done();
         });
 
-        it('will return a default value if path is not found.', (done) => {
+        it('will return a default value if path is not found.', () => {
 
             expect(Toys.reacher('q', { default: 'defaultValue' })(obj)).to.equal('defaultValue');
-            done();
         });
 
-        it('allows a falsey value to be used as the default value.', (done) => {
+        it('allows a falsey value to be used as the default value.', () => {
 
             expect(Toys.reacher('q', { default: '' })(obj)).to.equal('');
-            done();
         });
 
-        it('is reusable.', (done) => {
+        it('is reusable.', () => {
 
             const reacher = Toys.reacher('a.b.c.d');
             const anotherObj = { a: { b: { c: { d: 'x' } } } };
 
             expect(reacher(obj)).to.equal(1);
             expect(reacher(anotherObj)).to.equal('x');
-            done();
         });
 
-        it('works as an instance method.', (done) => {
+        it('works as an instance method.', () => {
 
             const toys = new Toys();
 
             expect(toys.reacher('a/b/c/d', '/')(obj)).to.equal(1);
-            done();
         });
     });
 
@@ -797,7 +401,7 @@ describe('Toys', () => {
             state: 'NY'
         }];
 
-        it('transforms an object based on the input object.', (done) => {
+        it('transforms an object based on the input object.', () => {
 
             const transform = Toys.transformer({
                 'person.address.lineOne': 'address.one',
@@ -820,11 +424,9 @@ describe('Toys', () => {
                 },
                 title: 'Warehouse'
             });
-
-            done();
         });
 
-        it('transforms an array of objects based on the input object.', (done) => {
+        it('transforms an array of objects based on the input object.', () => {
 
             const transform = Toys.transformer({
                 'person.address.lineOne': 'address.one',
@@ -861,11 +463,8 @@ describe('Toys', () => {
                     title: 'Garage'
                 }
             ]);
-
-            done();
         });
-
-        it('uses the reach options passed into it', (done) => {
+        it('uses the reach options passed into it', () => {
 
             const schema = {
                 'person-address-lineOne': 'address-one',
@@ -893,11 +492,9 @@ describe('Toys', () => {
                 },
                 title: 'Warehouse'
             });
-
-            done();
         });
 
-        it('uses a default separator for keys if options does not specify on', (done) => {
+        it('uses a default separator for keys if options does not specify on', () => {
 
             const schema = {
                 'person.address.lineOne': 'address.one',
@@ -924,11 +521,9 @@ describe('Toys', () => {
                 },
                 title: 'Warehouse'
             });
-
-            done();
         });
 
-        it('works to create shallow objects.', (done) => {
+        it('works to create shallow objects.', () => {
 
             const transform = Toys.transformer({
                 lineOne: 'address.one',
@@ -945,11 +540,9 @@ describe('Toys', () => {
                 region: 'CA',
                 province: null
             });
-
-            done();
         });
 
-        it('only allows strings in the map.', (done) => {
+        it('only allows strings in the map.', () => {
 
             expect(() => {
 
@@ -957,37 +550,29 @@ describe('Toys', () => {
                     lineOne: {}
                 });
             }).to.throw('All mappings must be strings');
-
-            done();
         });
 
-        it('throws an error on invalid arguments.', (done) => {
+        it('throws an error on invalid arguments.', () => {
 
             expect(() => {
 
                 Toys.transformer({})(NaN);
             }).to.throw('Invalid source object: must be null, undefined, an object, or an array');
-
-            done();
         });
 
-        it('is safe to pass null.', (done) => {
+        it('is safe to pass null.', () => {
 
             const transform = Toys.transformer({});
             expect(transform(null)).to.equal({});
-
-            done();
         });
 
-        it('is safe to pass undefined.', (done) => {
+        it('is safe to pass undefined.', () => {
 
             const transform = Toys.transformer({});
             expect(transform(undefined)).to.equal({});
-
-            done();
         });
 
-        it('is reusable.', (done) => {
+        it('is reusable.', () => {
 
             const transform = Toys.transformer({
                 lineOne: 'address.one',
@@ -1012,11 +597,9 @@ describe('Toys', () => {
                 region: 'NY',
                 province: null
             });
-
-            done();
         });
 
-        it('works as an instance method.', (done) => {
+        it('works as an instance method.', () => {
 
             const toys = new Toys();
             const transform = toys.transformer({
@@ -1034,90 +617,18 @@ describe('Toys', () => {
                 region: 'CA',
                 province: null
             });
-
-            done();
-        });
-    });
-
-    describe('promisify()', () => {
-
-        const fn = (value, cb) => {
-
-            if (value instanceof Error) {
-                return cb(value);
-            }
-
-            return cb(null, value, 'plus', 'extras');
-        };
-
-        it('promisifies a function, ignoring additional callback arguments.', () => {
-
-            const pifiedFn = Toys.promisify(fn);
-
-            return pifiedFn('24carat').then((value) => {
-
-                expect(value).to.equal('24carat');
-
-                return pifiedFn(new Error('0carat'));
-            }).catch((err) => {
-
-                expect(err).to.be.instanceof(Error);
-                expect(err.message).to.equal('0carat');
-            });
-        });
-
-        it('promisifies a function with specified promise implementation.', () => {
-
-            const pifiedFn = Toys.promisify(Pinkie, fn);
-            const promise = pifiedFn('24carat');
-
-            expect(promise).to.be.instanceof(Pinkie);
-
-            return promise.then((value) => {
-
-                expect(value).to.equal('24carat');
-            });
-        });
-
-        it('works as an instance method without custom promise implementation.', () => {
-
-            const toys = new Toys();
-            const pifiedFn = toys.promisify(fn);
-            const promise = pifiedFn('24carat');
-
-            expect(promise).to.be.instanceof(Promise);
-
-            return promise.then((value) => {
-
-                expect(value).to.equal('24carat');
-            });
-        });
-
-        it('works as an instance method with custom promise implementation.', () => {
-
-            const toys = new Toys(null, Pinkie);
-            const pifiedFn = toys.promisify(fn);
-            const promise = pifiedFn('24carat');
-
-            expect(promise).to.be.instanceof(Pinkie);
-
-            return promise.then((value) => {
-
-                expect(value).to.equal('24carat');
-            });
         });
     });
 
     describe('auth.strategy()', () => {
 
-        it('creates a one-off auth strategy with duplicate scheme name.', (done) => {
+        it('creates a one-off auth strategy with duplicate scheme name.', async () => {
 
-            const server = new Hapi.Server();
-            server.connection();
+            const server = Hapi.server();
 
-            Toys.auth.strategy(server, 'test-auth', (request, reply) => {
+            Toys.auth.strategy(server, 'test-auth', (request, h) => {
 
-                return reply.continue({ credentials: { user: 'bill' } });
+                return h.authenticated({ credentials: { user: 'bill' } });
             });
 
             // Reuse the scheme implicitly created above
@@ -1129,7 +640,7 @@ describe('Toys', () => {
                     path: '/',
                     config: {
                         auth: 'test-auth',
-                        handler: (request, reply) => reply(request.auth.credentials)
+                        handler: (request) => request.auth.credentials
                     }
                 },
                 {
@@ -1137,32 +648,28 @@ describe('Toys', () => {
                     path: '/again',
                     config: {
                         auth: 'test-auth-again',
-                        handler: (request, reply) => reply(request.auth.credentials)
+                        handler: (request) => request.auth.credentials
                     }
                 }
             ]);
 
-            server.inject('/', (res1) => {
+            const res1 = await server.inject('/');
 
-                expect(res1.result).to.equal({ user: 'bill' });
+            expect(res1.result).to.equal({ user: 'bill' });
 
-                server.inject('/again', (res2) => {
+            const res2 = await server.inject('/again');
 
-                    expect(res2.result).to.equal({ user: 'bill' });
-                    done();
-                });
-            });
+            expect(res2.result).to.equal({ user: 'bill' });
         });
 
-        it('works as an instance method.', (done) => {
+        it('works as an instance method.', async () => {
 
-            const server = new Hapi.Server();
+            const server = Hapi.server();
             const toys = new Toys(server);
-            server.connection();
 
-            toys.auth.strategy('test-auth', (request, reply) => {
+            toys.auth.strategy('test-auth', (request, h) => {
 
-                return reply.continue({ credentials: { user: 'bill' } });
+                return h.authenticated({ credentials: { user: 'bill' } });
             });
 
             server.route([
@@ -1171,16 +678,14 @@ describe('Toys', () => {
                     path: '/',
                     config: {
                         auth: 'test-auth',
-                        handler: (request, reply) => reply(request.auth.credentials)
+                        handler: (request) => request.auth.credentials
                     }
                 }
             ]);
 
-            server.inject('/', (res) => {
+            const res = await server.inject('/');
 
-                expect(res.result).to.equal({ user: 'bill' });
-                done();
-            });
+            expect(res.result).to.equal({ user: 'bill' });
         });
     });
 
@@ -1195,6 +700,7 @@ describe('Toys', () => {
         'onRequest',
         'onPreAuth',
         'onPostAuth',
+        'onCredentials',
         'onPreHandler',
         'onPostHandler',
         'onPreResponse'
@@ -1204,7 +710,7 @@ describe('Toys', () => {
 
         describe(`${ext}()`, () => {
 
-            it('creates a valid hapi request extension without options.', (done) => {
+            it('creates a valid hapi request extension without options.', () => {
 
                 const fn = function () {};
                 const extension = Toys[ext](fn);
@@ -1214,11 +720,9 @@ describe('Toys', () => {
                 expect(Object.keys(extension)).to.only.contain(keys);
                 isExt || expect(extension.type).to.equal(ext);
                 expect(extension.method).to.shallow.equal(fn);
-
-                done();
             });
 
-            it('creates a valid hapi request extension with options.', (done) => {
+            it('creates a valid hapi request extension with options.', () => {
 
                 const fn = function () {};
                 const opts = { before: 'loveboat' };
@@ -1230,11 +734,9 @@ describe('Toys', () => {
                 isExt || expect(extension.type).to.equal(ext);
                 expect(extension.method).to.shallow.equal(fn);
                 expect(extension.options).to.shallow.equal(opts);
-
-                done();
             });
 
-            it('works as an instance method.', (done) => {
+            it('works as an instance method.', () => {
 
                 const fn = function () {};
                 const opts = { before: 'loveboat' };
@@ -1247,8 +749,828 @@ describe('Toys', () => {
                 isExt || expect(extension.type).to.equal(ext);
                 expect(extension.method).to.shallow.equal(fn);
                 expect(extension.options).to.shallow.equal(opts);
+            });
+        });
+    });
 
-                done();
+    describe('noop', () => {
+
+        it('is a hapi plugin that does nothing and can be registered multiple times.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.noop.register).to.shallow.equal(Hoek.ignore);
+
+            await server.register(Toys.noop);
+
+            expect(server.registrations).to.only.contain('toys-noop');
+
+            await server.register(Toys.noop);
+
+            expect(server.registrations).to.only.contain('toys-noop');
+        });
+
+        it('works as an instance property.', async () => {
+
+            const server = Hapi.server();
+            const toys = new Toys();
+
+            expect(toys.noop.register).to.shallow.equal(Hoek.ignore);
+
+            await server.register(toys.noop);
+
+            expect(server.registrations).to.only.contain('toys-noop');
+
+            await server.register(toys.noop);
+
+            expect(server.registrations).to.only.contain('toys-noop');
+        });
+    });
+
+    describe('async event()', () => {
+
+        it('waits for an event to be emitted.', async () => {
+
+            const emitter = new EventEmitter();
+
+            let emitted = false;
+
+            emitter.once('my-event', () => {
+
+                emitted = true;
+            });
+
+            setTimeout(() => emitter.emit('my-event', 'value'));
+
+            const myEvent = Toys.event(emitter, 'my-event');
+
+            expect(emitted).to.equal(false);
+            expect(emitter.listenerCount('my-event')).to.equal(2);
+            expect(emitter.listenerCount('error')).to.equal(1);
+
+            const value = await myEvent;
+
+            expect(value).to.equal('value');
+            expect(emitted).to.equal(true);
+            expect(emitter.listenerCount('my-event')).to.equal(0);
+            expect(emitter.listenerCount('error')).to.equal(0);
+        });
+
+        it('throws if an error event is emitted.', async () => {
+
+            const emitter = new EventEmitter();
+
+            let emitted = false;
+
+            emitter.once('error', () => {
+
+                emitted = true;
+            });
+
+            setTimeout(() => emitter.emit('error', new Error('Oops!')));
+
+            const myEvent = Toys.event(emitter, 'my-event');
+
+            expect(emitted).to.equal(false);
+            expect(emitter.listenerCount('my-event')).to.equal(1);
+            expect(emitter.listenerCount('error')).to.equal(2);
+
+            await expect(myEvent).to.reject('Oops!');
+
+            expect(emitted).to.equal(true);
+            expect(emitter.listenerCount('my-event')).to.equal(0);
+            expect(emitter.listenerCount('error')).to.equal(0);
+        });
+
+        it('works as an instance method.', async () => {
+
+            const toys = new Toys();
+            const emitter = new EventEmitter();
+
+            let emitted = false;
+
+            emitter.once('my-event', () => {
+
+                emitted = true;
+            });
+
+            setTimeout(() => emitter.emit('my-event', 'value'));
+
+            const myEvent = toys.event(emitter, 'my-event');
+
+            expect(emitted).to.equal(false);
+
+            const value = await myEvent;
+
+            expect(value).to.equal('value');
+            expect(emitted).to.equal(true);
+        });
+    });
+
+    describe('async stream()', () => {
+
+        it('waits for a readable stream to end.', async () => {
+
+            let i = 0;
+
+            const counter = new Stream.Readable({
+                read() {
+
+                    if (i >= 10) {
+                        return this.push(null);
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                }
+            });
+
+            let ended = false;
+            counter.once('end', () => {
+
+                ended = true;
+            });
+
+            const data = [];
+            counter.on('data', (count) => data.push(count.toString()));
+
+            expect(ended).to.equal(false);
+            expect(data).to.equal([]);
+
+            const value = await Toys.stream(counter);
+
+            expect(value).to.not.exist();
+            expect(ended).to.equal(true);
+            expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+        });
+
+        it('waits for a writable stream to finish.', async () => {
+
+            const data = [];
+
+            const toArray = new Stream.Writable({
+                write(chunk, encoding, cb) {
+
+                    process.nextTick(() => {
+
+                        data.push(chunk.toString());
+
+                        return cb();
+                    });
+                }
+            });
+
+            let finished = false;
+            toArray.once('finish', () => {
+
+                finished = true;
+            });
+
+            for (let i = 0; i < 10; ++i) {
+                toArray.write(`${i}`);
+            }
+
+            process.nextTick(() => toArray.end());
+
+            expect(finished).to.equal(false);
+            expect(data).to.equal([]);
+
+            const value = await Toys.stream(toArray);
+
+            expect(value).to.not.exist();
+            expect(finished).to.equal(true);
+            expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+        });
+
+        it('waits for a duplex stream to end and finish.', async () => {
+
+            let i = 0;
+            const data = [];
+
+            const countToArray = new Stream.Duplex({
+                read() {
+
+                    if (i >= 10) {
+                        return this.push(null);
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                },
+                write(chunk, encoding, cb) {
+
+                    process.nextTick(() => {
+
+                        data.push(chunk.toString());
+
+                        return cb();
+                    });
+                }
+            });
+
+            let ended = false;
+            countToArray.once('end', () => {
+
+                ended = true;
+            });
+
+            let finished = false;
+            countToArray.once('finish', () => {
+
+                finished = true;
+            });
+
+            countToArray.pipe(countToArray);
+
+            expect(ended).to.equal(false);
+            expect(finished).to.equal(false);
+            expect(data).to.equal([]);
+
+            const value = await Toys.stream(countToArray);
+
+            expect(value).to.not.exist();
+            expect(ended).to.equal(true);
+            expect(finished).to.equal(true);
+            expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+        });
+
+        it('throws on a stream error.', async () => {
+
+            let i = 0;
+
+            const counter = new Stream.Readable({
+                read() {
+
+                    if (i >= 5) {
+                        return process.nextTick(() => this.emit('error', new Error('Oops!')));
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                }
+            });
+
+            let ended = false;
+            counter.once('end', () => {
+
+                ended = true;
+            });
+
+            const data = [];
+            counter.on('data', (count) => data.push(count.toString()));
+
+            expect(ended).to.equal(false);
+            expect(data).to.equal([]);
+
+            await expect(Toys.stream(counter)).to.reject('Oops!');
+
+            expect(ended).to.equal(false);
+            expect(data).to.equal(['0', '1', '2', '3', '4']);
+        });
+
+        it('works as an instance method.', async () => {
+
+            let i = 0;
+
+            const counter = new Stream.Readable({
+                read() {
+
+                    if (i >= 10) {
+                        return this.push(null);
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                }
+            });
+
+            let ended = false;
+            counter.once('end', () => {
+
+                ended = true;
+            });
+
+            const data = [];
+            counter.on('data', (count) => data.push(count.toString()));
+
+            expect(ended).to.equal(false);
+            expect(data).to.equal([]);
+
+            const toys = new Toys();
+            const value = await toys.stream(counter);
+
+            expect(value).to.not.exist();
+            expect(ended).to.equal(true);
+            expect(data).to.equal(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+        });
+    });
+
+    describe('options()', () => {
+
+        it('gets plugin options from a server.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.options(server)).to.shallow.equal(server.realm.pluginOptions);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    expect(Toys.options(srv)).to.shallow.equal(srv.realm.pluginOptions);
+                }
+            });
+        });
+
+        it('gets plugin options from a request.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request) {
+
+                            expect(Toys.options(request)).to.shallow.equal(request.route.realm.pluginOptions);
+                            expect(Toys.options(request)).to.shallow.equal(srv.realm.pluginOptions);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets plugin options from a route.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request) {
+
+                            expect(Toys.options(request.route)).to.shallow.equal(request.route.realm.pluginOptions);
+                            expect(Toys.options(request.route)).to.shallow.equal(srv.realm.pluginOptions);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets plugin options from a response toolkit.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request, h) {
+
+                            expect(Toys.options(h)).to.shallow.equal(h.realm.pluginOptions);
+                            expect(Toys.options(h)).to.shallow.equal(srv.realm.pluginOptions);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets plugin options from a realm.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.options(server.realm)).to.shallow.equal(server.realm.pluginOptions);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    expect(Toys.options(srv.realm)).to.shallow.equal(srv.realm.pluginOptions);
+                }
+            });
+        });
+
+        it('throws when passed an unfamiliar object.', () => {
+
+            expect(() => Toys.options({})).to.throw('Must pass a server, request, route, response toolkit, or realm');
+            expect(() => Toys.options(null)).to.throw('Must pass a server, request, route, response toolkit, or realm');
+        });
+
+        it('works as an instance method, defaulting to get this.server\'s plugin options.', async () => {
+
+            const server = Hapi.server();
+            const toys1 = new Toys(server);
+
+            expect(toys1.options(server.realm)).to.shallow.equal(server.realm.pluginOptions);
+            expect(toys1.options()).to.shallow.equal(server.realm.pluginOptions);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    const toys2 = new Toys(srv);
+
+                    expect(toys2.options(srv.realm)).to.shallow.equal(srv.realm.pluginOptions);
+                    expect(toys2.options()).to.shallow.equal(srv.realm.pluginOptions);
+                }
+            });
+        });
+    });
+
+    describe('realm()', () => {
+
+        it('gets realm from a server.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.realm(server)).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    expect(Toys.realm(srv)).to.shallow.equal(srv.realm);
+                }
+            });
+        });
+
+        it('gets realm from a request.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request) {
+
+                            expect(Toys.realm(request)).to.shallow.equal(request.route.realm);
+                            expect(Toys.realm(request)).to.shallow.equal(srv.realm);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets realm from a route.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request) {
+
+                            expect(Toys.realm(request.route)).to.shallow.equal(request.route.realm);
+                            expect(Toys.realm(request.route)).to.shallow.equal(srv.realm);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets realm from a response toolkit.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    srv.route({
+                        method: 'get',
+                        path: '/',
+                        handler(request, h) {
+
+                            expect(Toys.realm(h)).to.shallow.equal(h.realm);
+                            expect(Toys.realm(h)).to.shallow.equal(srv.realm);
+
+                            return { ok: true };
+                        }
+                    });
+                }
+            });
+
+            const { result } = await server.inject('/');
+
+            expect(result).to.equal({ ok: true });
+        });
+
+        it('gets realm from a realm.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.realm(server.realm)).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    expect(Toys.realm(srv.realm)).to.shallow.equal(srv.realm);
+                }
+            });
+        });
+
+        it('throws when passed an unfamiliar object.', () => {
+
+            expect(() => Toys.realm({})).to.throw('Must pass a server, request, route, response toolkit, or realm');
+            expect(() => Toys.realm(null)).to.throw('Must pass a server, request, route, response toolkit, or realm');
+        });
+
+        it('works as an instance method, defaulting to get this.server\'s realm.', async () => {
+
+            const server = Hapi.server();
+            const toys1 = new Toys(server);
+
+            expect(toys1.realm(server.realm)).to.shallow.equal(server.realm);
+            expect(toys1.realm()).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin',
+                register(srv) {
+
+                    const toys2 = new Toys(srv);
+
+                    expect(toys2.realm(srv.realm)).to.shallow.equal(srv.realm);
+                    expect(toys2.realm()).to.shallow.equal(srv.realm);
+                }
+            });
+        });
+    });
+
+    describe('rootRealm()', () => {
+
+        it('given a realm, returns the root server\'s realm.', async () => {
+
+            const server = Hapi.server();
+
+            expect(Toys.rootRealm(server.realm)).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin-a',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-a1',
+                        register(srvA1) {
+
+                            expect(Toys.rootRealm(srvA1.realm)).to.shallow.equal(server.realm);
+                        }
+                    });
+                }
+            });
+        });
+
+        it('works as an instance method, returning this.server\'s root realm.', async () => {
+
+            const server = Hapi.server();
+            const toys = new Toys(server);
+
+            expect(toys.rootRealm()).to.shallow.equal(server.realm);
+
+            await server.register({
+                name: 'plugin-a',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-a1',
+                        register(srvA1) {
+
+                            const toysA1 = new Toys(srvA1);
+                            expect(toysA1.rootRealm()).to.shallow.equal(server.realm);
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    describe('state()', () => {
+
+        it('returns/initializes plugin state given a realm and plugin name.', async () => {
+
+            const server = Hapi.server();
+            const state = () => Toys.state(server.realm, 'root');
+
+            expect(server.realm.plugins.root).to.not.exist();
+            expect(state()).to.shallow.equal(state());
+            expect(state()).to.shallow.equal(server.realm.plugins.root);
+            expect(state()).to.equal({});
+
+            await server.register({
+                name: 'plugin-a',
+                register(srv) {
+
+                    const stateA = () => Toys.state(srv.realm, 'plugin-a');
+
+                    expect(srv.realm.plugins['plugin-a']).to.not.exist();
+                    expect(stateA()).to.shallow.equal(stateA());
+                    expect(stateA()).to.shallow.equal(srv.realm.plugins['plugin-a']);
+                    expect(stateA()).to.equal({});
+                }
+            });
+        });
+
+        it('works as instance method, using this.server\'s realm.', async () => {
+
+            const server = Hapi.server();
+            const toys = new Toys(server);
+            const state = () => toys.state('root');
+
+            expect(server.realm.plugins.root).to.not.exist();
+            expect(state()).to.shallow.equal(state());
+            expect(state()).to.shallow.equal(server.realm.plugins.root);
+            expect(state()).to.equal({});
+
+            await server.register({
+                name: 'plugin-a',
+                register(srv) {
+
+                    const toysA = new Toys(srv);
+                    const stateA = () => toysA.state('plugin-a');
+
+                    expect(srv.realm.plugins['plugin-a']).to.not.exist();
+                    expect(stateA()).to.shallow.equal(stateA());
+                    expect(stateA()).to.shallow.equal(srv.realm.plugins['plugin-a']);
+                    expect(stateA()).to.equal({});
+                }
+            });
+        });
+    });
+
+    describe('rootState()', () => {
+
+        it('given a realm, returns the root server\'s realm.', async () => {
+
+            const server = Hapi.server();
+            const state = () => Toys.rootState(server.realm, 'root');
+
+            expect(server.realm.plugins.root).to.not.exist();
+            expect(state()).to.shallow.equal(state());
+            expect(state()).to.shallow.equal(server.realm.plugins.root);
+            expect(state()).to.equal({});
+
+            await server.register({
+                name: 'plugin-a',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-a1',
+                        register(srvA1) {
+
+                            const stateA1 = () => Toys.rootState(srvA1.realm, 'plugin-a1');
+
+                            expect(server.realm.plugins['plugin-a1']).to.not.exist();
+                            expect(stateA1()).to.shallow.equal(stateA1());
+                            expect(stateA1()).to.shallow.equal(server.realm.plugins['plugin-a1']);
+                            expect(stateA1()).to.equal({});
+                        }
+                    });
+                }
+            });
+        });
+
+        it('works as an instance method, using this.server\'s realm.', async () => {
+
+            const server = Hapi.server();
+            const toys = new Toys(server);
+            const state = () => toys.rootState('root');
+
+            expect(server.realm.plugins.root).to.not.exist();
+            expect(state()).to.shallow.equal(state());
+            expect(state()).to.shallow.equal(server.realm.plugins.root);
+            expect(state()).to.equal({});
+
+            await server.register({
+                name: 'plugin-a',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-a1',
+                        register(srvA1) {
+
+                            const toysA1 = new Toys(srvA1);
+                            const stateA1 = () => toysA1.rootState('plugin-a1');
+
+                            expect(server.realm.plugins['plugin-a1']).to.not.exist();
+                            expect(stateA1()).to.shallow.equal(stateA1());
+                            expect(stateA1()).to.shallow.equal(server.realm.plugins['plugin-a1']);
+                            expect(stateA1()).to.equal({});
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    describe('forEachAncestorRealm()', () => {
+
+        it('calls a function for each ancestor realm up to the root realm', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin-a',
+                register() {}
+            });
+
+            await server.register({
+                name: 'plugin-b',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-b1',
+                        register(srvB1) {
+
+                            const realms = [];
+                            Toys.forEachAncestorRealm(srvB1.realm, (realm) => realms.push(realm));
+
+                            expect(realms).to.have.length(3);
+                            expect(realms[0]).to.shallow.equal(srvB1.realm);
+                            expect(realms[1]).to.shallow.equal(srvB.realm);
+                            expect(realms[2]).to.shallow.equal(server.realm);
+                        }
+                    });
+                }
+            });
+        });
+
+        it('works as an instance method, using this.server\'s realm.', async () => {
+
+            const server = Hapi.server();
+
+            await server.register({
+                name: 'plugin-a',
+                register() {}
+            });
+
+            await server.register({
+                name: 'plugin-b',
+                async register(srvB) {
+
+                    await srvB.register({
+                        name: 'plugin-b1',
+                        register(srvB1) {
+
+                            const toysB1 = new Toys(srvB1);
+
+                            const realms = [];
+                            toysB1.forEachAncestorRealm((realm) => realms.push(realm));
+
+                            expect(realms).to.have.length(3);
+                            expect(realms[0]).to.shallow.equal(srvB1.realm);
+                            expect(realms[1]).to.shallow.equal(srvB.realm);
+                            expect(realms[2]).to.shallow.equal(server.realm);
+                        }
+                    });
+                }
             });
         });
     });
