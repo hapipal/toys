@@ -816,6 +816,33 @@ describe('Toys', () => {
             expect(emitter.listenerCount('error')).to.equal(0);
         });
 
+        it('waits for an event to be emitted with multiple: true.', async () => {
+
+            const emitter = new EventEmitter();
+
+            let emitted = false;
+
+            emitter.once('my-event', () => {
+
+                emitted = true;
+            });
+
+            setTimeout(() => emitter.emit('my-event', 'value1', 'value2'));
+
+            const myEvent = Toys.event(emitter, 'my-event', { multiple: true });
+
+            expect(emitted).to.equal(false);
+            expect(emitter.listenerCount('my-event')).to.equal(2);
+            expect(emitter.listenerCount('error')).to.equal(1);
+
+            const values = await myEvent;
+
+            expect(values).to.equal(['value1', 'value2']);
+            expect(emitted).to.equal(true);
+            expect(emitter.listenerCount('my-event')).to.equal(0);
+            expect(emitter.listenerCount('error')).to.equal(0);
+        });
+
         it('throws if an error event is emitted.', async () => {
 
             const emitter = new EventEmitter();
@@ -837,6 +864,37 @@ describe('Toys', () => {
 
             await expect(myEvent).to.reject('Oops!');
 
+            expect(emitted).to.equal(true);
+            expect(emitter.listenerCount('my-event')).to.equal(0);
+            expect(emitter.listenerCount('error')).to.equal(0);
+        });
+
+        it('does not throw when an error is emitted when error: false.', async () => {
+
+            const emitter = new EventEmitter();
+
+            let emitted = false;
+
+            emitter.once('error', () => {
+
+                emitted = true;
+            });
+
+            setTimeout(() => {
+
+                emitter.emit('error', new Error('Oops!'));
+                emitter.emit('my-event', 'value');
+            });
+
+            const myEvent = Toys.event(emitter, 'my-event', { error: false });
+
+            expect(emitted).to.equal(false);
+            expect(emitter.listenerCount('my-event')).to.equal(1);
+            expect(emitter.listenerCount('error')).to.equal(1);
+
+            const value = await myEvent;
+
+            expect(value).to.equal('value');
             expect(emitted).to.equal(true);
             expect(emitter.listenerCount('my-event')).to.equal(0);
             expect(emitter.listenerCount('error')).to.equal(0);

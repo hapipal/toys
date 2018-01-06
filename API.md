@@ -191,10 +191,10 @@ await server.register([
 ]);
 ```
 
-### `async Toys.event(emitter, eventName)`
-> As instance, `async toys.event(emitter, eventName)`
+### `async Toys.event(emitter, eventName, [options])`
+> As instance, `async toys.event(emitter, eventName, [options])`
 
-Waits for `emitter` to emit an event named `eventName` and returns the first value passed to the event's listener.  Throws if an event named `'error'` is emitted.  This can be useful when waiting for an event in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
+Waits for `emitter` to emit an event named `eventName` and returns the first value passed to the event's listener.  When `options.multiple` is `true` it instead returns an array of all values passed to the listener.  Throws if an event named `'error'` is emitted unless `options.error` is `false`.  This can be useful when waiting for an event in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
 
 ```js
 const ChildProcess = require('child_process');
