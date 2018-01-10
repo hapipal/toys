@@ -191,8 +191,8 @@ await server.register([
 ]);
 ```
 
-### `async Toys.event(emitter, eventName, [options])`
-> As instance, `async toys.event(emitter, eventName, [options])`
+### `await Toys.event(emitter, eventName, [options])`
+> As instance, `await toys.event(emitter, eventName, [options])`
 
 Waits for `emitter` to emit an event named `eventName` and returns the first value passed to the event's listener.  When `options.multiple` is `true` it instead returns an array of all values passed to the listener.  Throws if an event named `'error'` is emitted unless `options.error` is `false`.  This can be useful when waiting for an event in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
 
@@ -219,8 +219,8 @@ server.route({
 });
 ```
 
-### `async Toys.stream(stream)`
-> As instance, `async toys.stream(stream)`
+### `await Toys.stream(stream)`
+> As instance, `await toys.stream(stream)`
 
 Waits for a readable `stream` to end, a writable `stream` to finish, or a duplex `stream` to both end and finish.  Throws an error if `stream` emits an `'error'` event.  This can be useful when waiting for a stream to process in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
 
