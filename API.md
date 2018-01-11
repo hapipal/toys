@@ -271,7 +271,7 @@ Given `obj` as a server, request, route, response toolkit, or realm, returns the
 module.exports = {
     method: 'post',
     path: '/user/{id}/resend-verification-email',
-    handler: async (request) {
+    handler: async (request) => {
 
         // fromAddress configured at plugin registration time, e.g. no-reply@toys.biz
         const { fromAddress } = Toys.options(request);
