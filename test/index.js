@@ -689,6 +689,101 @@ describe('Toys', () => {
         });
     });
 
+    describe('pre()', () => {
+
+        it('creates valid hapi route prerequisites with a function or config.', () => {
+
+            const prereqs = {
+                assign1: () => null,
+                assign2: { method: () => null, failAction: 'log' }
+            };
+
+            const [pre1, pre2, ...others] = Toys.pre(prereqs);
+
+            expect(others).to.have.length(0);
+
+            expect(pre1).to.only.contain(['assign', 'method']);
+            expect(pre1.assign).to.equal('assign1');
+            expect(pre1.method).to.shallow.equal(prereqs.assign1);
+
+            expect(pre2).to.only.contain(['assign', 'method', 'failAction']);
+            expect(pre2.assign).to.equal('assign2');
+            expect(pre2.method).to.shallow.equal(prereqs.assign2.method);
+            expect(pre2.failAction).to.equal('log');
+
+            const method = () => null;
+
+            expect(Toys.pre(method)).to.shallow.equal(method);
+        });
+
+        it('creates valid hapi route prerequisites with an array.', () => {
+
+            const prereqs = [
+                { assign1: () => null },
+                { assign2: { method: () => null, failAction: 'log' } },
+                {
+                    assign3: () => null,
+                    assign4: () => null
+                },
+                () => null
+            ];
+
+            const [
+                [pre1, ...others1],
+                [pre2, ...others2],
+                [pre3, pre4, ...others3],
+                pre5,
+                ...others
+            ] = Toys.pre(prereqs);
+
+            expect(others).to.have.length(0);
+            expect(others1).to.have.length(0);
+            expect(others2).to.have.length(0);
+            expect(others3).to.have.length(0);
+
+            expect(pre1).to.only.contain(['assign', 'method']);
+            expect(pre1.assign).to.equal('assign1');
+            expect(pre1.method).to.shallow.equal(prereqs[0].assign1);
+
+            expect(pre2).to.only.contain(['assign', 'method', 'failAction']);
+            expect(pre2.assign).to.equal('assign2');
+            expect(pre2.method).to.shallow.equal(prereqs[1].assign2.method);
+            expect(pre2.failAction).to.equal('log');
+
+            expect(pre3).to.only.contain(['assign', 'method']);
+            expect(pre3.assign).to.equal('assign3');
+            expect(pre3.method).to.shallow.equal(prereqs[2].assign3);
+
+            expect(pre4).to.only.contain(['assign', 'method']);
+            expect(pre4.assign).to.equal('assign4');
+            expect(pre4.method).to.shallow.equal(prereqs[2].assign4);
+
+            expect(pre5).to.shallow.equal(prereqs[3]);
+        });
+
+        it('works as an instance method.', () => {
+
+            const prereqs = {
+                assign1: () => null,
+                assign2: { method: () => null, failAction: 'log' }
+            };
+
+            const toys = new Toys();
+            const [pre1, pre2, ...others] = toys.pre(prereqs);
+
+            expect(others).to.have.length(0);
+
+            expect(pre1).to.only.contain(['assign', 'method']);
+            expect(pre1.assign).to.equal('assign1');
+            expect(pre1.method).to.shallow.equal(prereqs.assign1);
+
+            expect(pre2).to.only.contain(['assign', 'method', 'failAction']);
+            expect(pre2.assign).to.equal('assign2');
+            expect(pre2.method).to.shallow.equal(prereqs.assign2.method);
+            expect(pre2.failAction).to.equal('log');
+        });
+    });
+
     // Test the request extension helpers
 
     [

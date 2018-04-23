@@ -35,10 +35,65 @@ server.route(
 );
 ```
 
+### `Toys.pre(prereqs)`
+> As instance, `toys.pre(prereqs)`
+
+Returns a hapi [route prerequisite configuration](https://github.com/hapijs/hapi/blob/master/API.md#route.options.pre), mapping each key of `prereqs` to the `assign` value of a route prerequisite.  When the key's corresponding value is a function, that function is used as the `method` of the prerequisite.  When the key's corresponding value is an object, that object's keys and values are included in the prerequisite.  When `prereqs` is a function, that function is simply passed-through.  When `prereqs` is an array, the array's values are simply mapped as described above.
+
+This is intended to be a useful shorthand for writing route prerequisites, as demonstrated below.
+
+```js
+server.route({
+    method: 'get',
+    path: '/user/{id}',
+    options: {
+        pre: Toys.pre([
+            {
+                user: async ({ params }) => await getUserById(params.id)
+            },
+            ({ pre }) => ensureUserIsPublic(pre.user),
+            {
+                groups: async ({ params, pre }) => await getUserGroups(params.id, pre.user.roles),
+                posts: async ({ params, pre }) => await getUserPosts(params.id, pre.user.roles)
+            }
+        ]),
+        handler: ({ pre }) => ({
+            ...pre.user,
+            groups: pre.groups,
+            posts: pre.posts
+        })
+    }
+});
+
+// pre value is expanded as shown below
+
+/*
+        pre: [
+            [
+                {
+                    assign: 'user',
+                    method: async ({ params }) => await getUserById(params.id)
+                }
+            ],
+            ({ pre }) => ensureUserIsPublic(pre.user),
+            [
+                {
+                    assign: 'groups',
+                    method: async ({ params, pre }) => await getUserGroups(params.id, pre.user.roles)
+                },
+                {
+                    assign: 'posts',
+                    method: async ({ params, pre }) => await getUserPosts(params.id, pre.user.roles)
+                }
+            ],
+        ]
+ */
+```
+
 ### `Toys.ext(method, [options])`
 > As instance, `toys.ext(method, [options])`
 
-Returns a hapi [extension config](https://github.com/hapijs/hapi/blob/master/API.md#server.ext()) `{ method, options }` without the `type` field. The config only has `options` set when provided as an argument.  This intended to be used with the route `ext` config.
+Returns a hapi [extension config](https://github.com/hapijs/hapi/blob/master/API.md#server.ext()) `{ method, options }` without the `type` field. The config only has `options` set when provided as an argument.  This is intended to be used with the route `ext` config.
 
 ```js
 server.route({
