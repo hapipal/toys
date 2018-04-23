@@ -85,7 +85,7 @@ server.route({
                     assign: 'posts',
                     method: async ({ params, pre }) => await getUserPosts(params.id, pre.user.roles)
                 }
-            ],
+            ]
         ]
  */
 ```
