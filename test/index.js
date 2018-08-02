@@ -143,7 +143,10 @@ describe('Toys', () => {
                         headers: { defaults: true },
                         params: { defaults: true }
                     },
-                    bind: { defaults: true }
+                    bind: { defaults: true },
+                    response: {
+                        schema : { defaults: true }
+                    }
                 },
                 options: {
                     anything: { x: 1 },
@@ -153,7 +156,10 @@ describe('Toys', () => {
                         headers: { defaults: true },
                         params: { defaults: true }
                     },
-                    bind: { defaults: true }
+                    bind: { defaults: true },
+                    response: {
+                        schema : { defaults: true }
+                    }
                 }
             };
 
@@ -166,7 +172,10 @@ describe('Toys', () => {
                         headers: {},
                         params: {}
                     },
-                    bind: {}
+                    bind: {},
+                    response: {
+                        schema: {}
+                    }
                 },
                 options: {
                     anything: { y: 2 },
@@ -176,7 +185,10 @@ describe('Toys', () => {
                         headers: {},
                         params: {}
                     },
-                    bind: {}
+                    bind: {},
+                    response: {
+                        schema: {}
+                    }
                 }
             };
 
@@ -191,7 +203,10 @@ describe('Toys', () => {
                         headers: {},
                         params: {}
                     },
-                    bind: {}
+                    bind: {},
+                    response: {
+                        schema: {}
+                    }
                 },
                 options: {
                     anything: { x:1, y: 2 },
@@ -201,7 +216,10 @@ describe('Toys', () => {
                         headers: {},
                         params: {}
                     },
-                    bind: {}
+                    bind: {},
+                    response: {
+                        schema: {}
+                    }
                 }
             });
         });
