@@ -145,7 +145,7 @@ describe('Toys', () => {
                     },
                     bind: { defaults: true },
                     response: {
-                        schema : { defaults: true }
+                        schema: { defaults: true }
                     }
                 },
                 options: {
@@ -158,7 +158,7 @@ describe('Toys', () => {
                     },
                     bind: { defaults: true },
                     response: {
-                        schema : { defaults: true }
+                        schema: { defaults: true }
                     }
                 }
             };
