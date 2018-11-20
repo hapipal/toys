@@ -261,7 +261,8 @@ describe('Toys', () => {
                 },
                 g: {
                     h: 3
-                }
+                },
+                '-2': true
             },
             i: function () { },
             j: null,
@@ -285,6 +286,11 @@ describe('Toys', () => {
         it('returns last value of array using negative index.', () => {
 
             expect(Toys.reacher('k.-2')(obj)).to.equal(9);
+        });
+
+        it('returns object property with negative index for non-array.', () => {
+
+            expect(Toys.reacher('a.-2')(obj)).to.be.equal(true);
         });
 
         it('returns a valid member.', () => {
