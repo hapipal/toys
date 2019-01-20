@@ -33,7 +33,7 @@
   "devDependencies": {
     "code": "5.x.x",
     "coveralls": "3.x.x",
-    "hapi": "17.x.x",
+    "hapi": "18.x.x",
     "lab": "18.x.x"
   }
 }
