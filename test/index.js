@@ -4,10 +4,10 @@
 
 const EventEmitter = require('events');
 const Stream = require('stream');
-const Lab = require('lab');
-const Code = require('code');
-const Hapi = require('hapi');
-const Hoek = require('hoek');
+const Lab = require('@hapi/lab');
+const Code = require('@hapi/code');
+const Hapi = require('@hapi/hapi');
+const Hoek = require('@hapi/hoek');
 const Toys = require('..');
 
 // Test shortcuts
