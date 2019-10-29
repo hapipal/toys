@@ -141,7 +141,7 @@ server.ext([
             request.log(['my-plugin'], 'Someone knew a secret');
         }
 
-        return h.continue;        
+        return h.continue;
     }, {
         sandbox: 'plugin'
     })

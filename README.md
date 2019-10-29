@@ -14,8 +14,8 @@ Toys is a collection of utilities made to reduce common boilerplate in **hapi v1
 Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyserver-name-authenticate), [`Toys.reacher()`](API.md#toysreacherchain-options), and [`Toys.withRouteDefaults()`](API.md#toyswithroutedefaultsdefaults).  The [API Reference](API.md) is also filled with examples.
 
 ```js
-const Hapi = require('hapi');
-const Boom = require('boom');
+const Hapi = require('@hapi/hapi');
+const Boom = require('@hapi/boom');
 const Toys = require('toys');
 
 (async () => {
