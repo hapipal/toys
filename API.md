@@ -342,6 +342,34 @@ module.exports = {
 };
 ```
 
+### `Toys.header(response, name, value, [options])`
+> As instance, `toys.header(response, name, value, [options])`
+
+Designed to behave identically to hapi's [`response.header(name, value, [options])`](https://hapi.dev/api/#response.header()), but provide a unified interface for setting HTTP headers between both hapi [response objects](https://hapi.dev/api/#response-object) and [boom](https://hapi.dev/family/boom) errors.  This is useful in request extensions, when you don't know if [`request.response`](https://hapi.dev/api/#request.response) is a hapi response object or a boom error.  Returns `response`.
+
+- `name` - the header name.
+- `value` - the header value.
+- `options` - (optional) object where:
+  - `append` - if `true`, the value is appended to any existing header value using `separator`.  Defaults to `false`.
+  - `separator` - string used as separator when appending to an existing value.  Defaults to `','`.
+  - `override` - if `false`, the header value is not set if an existing value present.  Defaults to `true`.
+  - `duplicate` - if `false`, the header value is not modified if the provided value is already included.  Does not apply when `append` is `false` or if the `name` is `'set-cookie'`.  Defaults to `true`.
+
+### `Toys.getHeaders(response)`
+> As instance, `toys.getHeaders(response)`
+
+Returns `response`'s current HTTP headers, where `response` may be a hapi [response object](https://hapi.dev/api/#response-object) or a [boom](https://hapi.dev/family/boom) error.
+
+### `Toys.code(response, statusCode)`
+> As instance, `toys.code(response, statusCode)`
+
+Designed to behave identically to hapi's [`response.code(statusCode)`](https://hapi.dev/api/#response.code()), but provide a unified interface for setting the HTTP status code between both hapi [response objects](https://hapi.dev/api/#response-object) and [boom](https://hapi.dev/family/boom) errors.  This is useful in request extensions, when you don't know if [`request.response`](https://hapi.dev/api/#request.response) is a hapi response object or a boom error.  Returns `response`.
+
+### `Toys.getCode(response)`
+> As instance, `toys.getCode(response)`
+
+Returns `response`'s current HTTP status code, where `response` may be a hapi [response object](https://hapi.dev/api/#response-object) or a [boom](https://hapi.dev/family/boom) error.
+
 ### `Toys.realm(obj)`
 > As instance, `toys.realm([obj])`
 

@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --------------------------------------------------
 
 The Toys.reacher() and Toys.transformer() functions are based on code from hoek,
-and the internals.fromString() function is based on code from hapi.  Your use of
+and the Toys.header() function is based on code from hapi.  Your use of
 the source code for these functions is additionally subject to the terms and
 conditions of the following license.
 
