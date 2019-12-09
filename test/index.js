@@ -7,6 +7,7 @@ const Stream = require('stream');
 const Lab = require('@hapi/lab');
 const Code = require('@hapi/code');
 const Hapi = require('@hapi/hapi');
+const Boom = require('@hapi/boom');
 const Hoek = require('@hapi/hoek');
 const Toys = require('..');
 
@@ -1749,6 +1750,476 @@ describe('Toys', () => {
                     });
                 }
             });
+        });
+    });
+
+    describe('header()', () => {
+
+        const testHeadersWith = (method) => {
+
+            const server = Hapi.server();
+
+            server.route({
+                method: 'get',
+                path: '/non-error',
+                options: {
+                    handler: () => ({ success: true }),
+                    ext: {
+                        onPreResponse: { method }
+                    }
+                }
+            });
+
+            server.route({
+                method: 'get',
+                path: '/error',
+                options: {
+                    handler: () => {
+
+                        throw Boom.unauthorized('Original message');
+                    },
+                    ext: {
+                        onPreResponse: { method }
+                    }
+                }
+            });
+
+            return server;
+        };
+
+        it('throws when passed a non-response.', () => {
+
+            expect(() => Toys.header(null)).to.throw('The passed response must be a boom error or hapi response object.');
+            expect(() => Toys.header({})).to.throw('The passed response must be a boom error or hapi response object.');
+        });
+
+        it('sets headers without any options.', async () => {
+
+            const server = testHeadersWith((request, h) => {
+
+                Toys.header(request.response, 'a', 'x');
+                Toys.header(request.response, 'b', 'x');
+                Toys.header(request.response, 'b', 'y');
+
+                return h.continue;
+            });
+
+            const { headers: errorHeaders } = await server.inject('/error');
+            const { headers: nonErrorHeaders } = await server.inject('/non-error');
+
+            expect(errorHeaders).to.contain({ a: 'x', b: 'y' });
+            expect(nonErrorHeaders).to.contain({ a: 'x', b: 'y' });
+        });
+
+        it('does not set existing header when override is false.', async () => {
+
+            const server = testHeadersWith((request, h) => {
+
+                Toys.header(request.response, 'a', 'x', { override: false });
+                Toys.header(request.response, 'a', 'y', { override: false });
+
+                return h.continue;
+            });
+
+            const { headers: errorHeaders } = await server.inject('/error');
+            const { headers: nonErrorHeaders } = await server.inject('/non-error');
+
+            expect(errorHeaders).to.contain({ a: 'x' });
+            expect(nonErrorHeaders).to.contain({ a: 'x' });
+        });
+
+        it('appends to existing headers with separator.', async () => {
+
+            const server = testHeadersWith((request, h) => {
+
+                Toys.header(request.response, 'a', 'x', { append: true });
+                Toys.header(request.response, 'A', 'y', { append: true });
+                Toys.header(request.response, 'b', 'x', { append: true, separator: ';' });
+                Toys.header(request.response, 'B', 'y', { append: true, separator: ';' });
+
+                return h.continue;
+            });
+
+            const { headers: errorHeaders } = await server.inject('/error');
+            const { headers: nonErrorHeaders } = await server.inject('/non-error');
+
+            expect(errorHeaders).to.contain({ a: 'x,y', b: 'x;y' });
+            expect(nonErrorHeaders).to.contain({ a: 'x,y', b: 'x;y' });
+        });
+
+        it('handles special case for appending set-cookie.', async () => {
+
+            const server = testHeadersWith((request, h) => {
+
+                Toys.header(request.response, 'set-cookie', 'a=x', { append: true });
+                Toys.header(request.response, 'set-cookie', 'b=x', { append: true });
+                Toys.header(request.response, 'Set-Cookie', 'b=y', { append: true });
+
+                return h.continue;
+            });
+
+            const { headers: errorHeaders } = await server.inject('/error');
+            const { headers: nonErrorHeaders } = await server.inject('/non-error');
+
+            expect(nonErrorHeaders).to.contain({ 'set-cookie': ['a=x', 'b=x', 'b=y'] });
+            expect(errorHeaders).to.contain({ 'set-cookie': ['a=x', 'b=x', 'b=y'] });
+        });
+
+        it('prevents duplicates when appending when duplicate is false.', async () => {
+
+            const server = testHeadersWith((request, h) => {
+
+                Toys.header(request.response, 'a', 'x', { append: true });
+                Toys.header(request.response, 'A', 'y', { append: true });
+                Toys.header(request.response, 'a', 'y', { append: true, duplicate: false });
+                Toys.header(request.response, 'b', 'x', { append: true, separator: ';' });
+                Toys.header(request.response, 'B', 'y', { append: true, separator: ';' });
+                Toys.header(request.response, 'b', 'y', { append: true, separator: ';', duplicate: false });
+
+                return h.continue;
+            });
+
+            const { headers: errorHeaders } = await server.inject('/error');
+            const { headers: nonErrorHeaders } = await server.inject('/non-error');
+
+            expect(errorHeaders).to.contain({ a: 'x,y', b: 'x;y' });
+            expect(nonErrorHeaders).to.contain({ a: 'x,y', b: 'x;y' });
+        });
+
+        it('works as an instance method.', async () => {
+
+            const server = testHeadersWith((request, h) => {
+
+                const toys = new Toys();
+
+                toys.header(request.response, 'a', 'x');
+                toys.header(request.response, 'b', 'x');
+                toys.header(request.response, 'b', 'y', { append: true });
+
+                return h.continue;
+            });
+
+            const { headers: errorHeaders } = await server.inject('/error');
+            const { headers: nonErrorHeaders } = await server.inject('/non-error');
+
+            expect(errorHeaders).to.contain({ a: 'x', b: 'x,y' });
+            expect(nonErrorHeaders).to.contain({ a: 'x', b: 'x,y' });
+        });
+    });
+
+    describe('getHeaders()', () => {
+
+        it('throws when passed a non-response.', () => {
+
+            expect(() => Toys.getHeaders(null)).to.throw('The passed response must be a boom error or hapi response object.');
+            expect(() => Toys.getHeaders({})).to.throw('The passed response must be a boom error or hapi response object.');
+        });
+
+        it('gets headers values from a non-error response.', async () => {
+
+            const server = Hapi.server();
+
+            let headers;
+
+            server.route({
+                method: 'get',
+                path: '/non-error',
+                options: {
+                    handler: () => ({ success: true }),
+                    ext: {
+                        onPreResponse: {
+                            method: (request, h) => {
+
+                                request.response.header('a', 'x');
+                                request.response.header('b', 'y');
+
+                                headers = Toys.getHeaders(request.response);
+
+                                return h.continue;
+                            }
+                        }
+                    }
+                }
+            });
+
+            const res = await server.inject('/non-error');
+
+            expect(headers).to.contain({ a: 'x', b: 'y' });
+            expect(res.headers).to.contain({ a: 'x', b: 'y' });
+        });
+
+        it('gets headers values from an error response.', async () => {
+
+            const server = Hapi.server();
+
+            let headers;
+
+            server.route({
+                method: 'get',
+                path: '/error',
+                options: {
+                    handler: () => {
+
+                        throw Boom.unauthorized('Original message');
+                    },
+                    ext: {
+                        onPreResponse: {
+                            method: (request, h) => {
+
+                                request.response.output.headers.a = 'x';
+                                request.response.output.headers.b = 'y';
+
+                                headers = Toys.getHeaders(request.response);
+
+                                return h.continue;
+                            }
+                        }
+                    }
+                }
+            });
+
+            const res = await server.inject('/error');
+
+            expect(headers).to.equal({ a: 'x', b: 'y' });
+            expect(res.headers).to.contain({ a: 'x', b: 'y' });
+        });
+
+        it('works as an instance method.', async () => {
+
+            const server = Hapi.server();
+
+            let headers;
+
+            server.route({
+                method: 'get',
+                path: '/non-error',
+                options: {
+                    handler: () => ({ success: true }),
+                    ext: {
+                        onPreResponse: {
+                            method: (request, h) => {
+
+                                const toys = new Toys();
+
+                                request.response.header('a', 'x');
+                                request.response.header('b', 'y');
+
+                                headers = toys.getHeaders(request.response);
+
+                                return h.continue;
+                            }
+                        }
+                    }
+                }
+            });
+
+            const res = await server.inject('/non-error');
+
+            expect(headers).to.contain({ a: 'x', b: 'y' });
+            expect(res.headers).to.contain({ a: 'x', b: 'y' });
+        });
+    });
+
+    describe('code()', () => {
+
+        const testCodeWith = (method) => {
+
+            const server = Hapi.server();
+
+            server.route({
+                method: 'get',
+                path: '/non-error',
+                options: {
+                    handler: () => ({ success: true }),
+                    ext: {
+                        onPreResponse: { method }
+                    }
+                }
+            });
+
+            server.route({
+                method: 'get',
+                path: '/error',
+                options: {
+                    handler: () => {
+
+                        throw Boom.unauthorized('Original message');
+                    },
+                    ext: {
+                        onPreResponse: { method }
+                    }
+                }
+            });
+
+            return server;
+        };
+
+        it('throws when passed a non-response.', () => {
+
+            expect(() => Toys.code(null)).to.throw('The passed response must be a boom error or hapi response object.');
+            expect(() => Toys.code({})).to.throw('The passed response must be a boom error or hapi response object.');
+        });
+
+        it('sets status code.', async () => {
+
+            const server = testCodeWith((request, h) => {
+
+                Toys.code(request.response, 403);
+
+                return h.continue;
+            });
+
+            const errorRes = await server.inject('/error');
+            const nonErrorRes = await server.inject('/non-error');
+
+            expect(errorRes.statusCode).to.equal(403);
+            expect(nonErrorRes.statusCode).to.equal(403);
+
+            expect(errorRes.result).to.equal({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'Original message'
+            });
+
+            expect(nonErrorRes.result).to.equal({ success: true });
+        });
+
+        it('works as an instance method.', async () => {
+
+            const server = testCodeWith((request, h) => {
+
+                const toys = new Toys();
+
+                toys.code(request.response, 403);
+
+                return h.continue;
+            });
+
+            const errorRes = await server.inject('/error');
+            const nonErrorRes = await server.inject('/non-error');
+
+            expect(errorRes.statusCode).to.equal(403);
+            expect(nonErrorRes.statusCode).to.equal(403);
+
+            expect(errorRes.result).to.equal({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'Original message'
+            });
+
+            expect(nonErrorRes.result).to.equal({ success: true });
+        });
+    });
+
+    describe('getCode()', () => {
+
+
+        it('throws when passed a non-response.', () => {
+
+            expect(() => Toys.getCode(null)).to.throw('The passed response must be a boom error or hapi response object.');
+            expect(() => Toys.getCode({})).to.throw('The passed response must be a boom error or hapi response object.');
+        });
+
+        it('gets status code from a non-error response.', async () => {
+
+            const server = Hapi.server();
+
+            let code;
+
+            server.route({
+                method: 'get',
+                path: '/non-error',
+                options: {
+                    handler: () => ({ success: true }),
+                    ext: {
+                        onPreResponse: {
+                            method: (request, h) => {
+
+                                request.response.code(202);
+
+                                code = Toys.getCode(request.response);
+
+                                return h.continue;
+                            }
+                        }
+                    }
+                }
+            });
+
+            const res = await server.inject('/non-error');
+
+            expect(code).to.equal(202);
+            expect(res.statusCode).to.equal(202);
+        });
+
+        it('gets status code from an error response.', async () => {
+
+            const server = Hapi.server();
+
+            let code;
+
+            server.route({
+                method: 'get',
+                path: '/error',
+                options: {
+                    handler: () => {
+
+                        throw Boom.unauthorized();
+                    },
+                    ext: {
+                        onPreResponse: {
+                            method: (request, h) => {
+
+                                request.response.output.statusCode = 403;
+                                request.response.reformat();
+
+                                code = Toys.getCode(request.response);
+
+                                return h.continue;
+                            }
+                        }
+                    }
+                }
+            });
+
+            const res = await server.inject('/error');
+
+            expect(code).to.equal(403);
+            expect(res.statusCode).to.equal(403);
+        });
+
+        it('works as an instance method.', async () => {
+
+            const server = Hapi.server();
+
+            let code;
+
+            server.route({
+                method: 'get',
+                path: '/non-error',
+                options: {
+                    handler: () => ({ success: true }),
+                    ext: {
+                        onPreResponse: {
+                            method: (request, h) => {
+
+                                const toys = new Toys();
+
+                                request.response.code(202);
+
+                                code = toys.getCode(request.response);
+
+                                return h.continue;
+                            }
+                        }
+                    }
+                }
+            });
+
+            const res = await server.inject('/non-error');
+
+            expect(code).to.equal(202);
+            expect(res.statusCode).to.equal(202);
         });
     });
 });
