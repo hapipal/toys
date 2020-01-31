@@ -144,7 +144,8 @@ describe('Toys', () => {
                         query: { defaults: true },
                         payload: { defaults: true },
                         headers: { defaults: true },
-                        params: { defaults: true }
+                        params: { defaults: true },
+                        validator: { defaults: null }
                     },
                     bind: { defaults: true },
                     response: {
@@ -157,7 +158,8 @@ describe('Toys', () => {
                         query: { defaults: true },
                         payload: { defaults: true },
                         headers: { defaults: true },
-                        params: { defaults: true }
+                        params: { defaults: true },
+                        validator: { defaults: null }
                     },
                     bind: { defaults: true },
                     response: {
@@ -173,7 +175,8 @@ describe('Toys', () => {
                         query: {},
                         payload: {},
                         headers: {},
-                        params: {}
+                        params: {},
+                        validator: {}
                     },
                     bind: {},
                     response: {
@@ -186,7 +189,8 @@ describe('Toys', () => {
                         query: {},
                         payload: {},
                         headers: {},
-                        params: {}
+                        params: {},
+                        validator: {}
                     },
                     bind: {},
                     response: {
@@ -204,7 +208,8 @@ describe('Toys', () => {
                         query: {},
                         payload: {},
                         headers: {},
-                        params: {}
+                        params: {},
+                        validator: {}
                     },
                     bind: {},
                     response: {
@@ -217,7 +222,8 @@ describe('Toys', () => {
                         query: {},
                         payload: {},
                         headers: {},
-                        params: {}
+                        params: {},
+                        validator: {}
                     },
                     bind: {},
                     response: {
