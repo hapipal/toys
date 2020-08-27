@@ -11,7 +11,7 @@ const Boom = require('@hapi/boom');
 const Hoek = require('@hapi/hoek');
 const Toys = require('..');
 
-const Hapi = Somever.match(process.version, '>=12') ? require('@hapi/hapi-19') : require('@hapi/hapi');
+const Hapi = Somever.match(process.version, '>=12') ? require('@hapi/hapi-20') : require('@hapi/hapi');
 
 // Test shortcuts
 
