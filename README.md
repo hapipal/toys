@@ -8,8 +8,10 @@ Lead Maintainer - [Devin Ivy](https://github.com/devinivy)
 
 ## Usage
 > See also the [API Reference](API.md)
+>
+> For support below node v12 or hapi v19 see toys v2.
 
-Toys is a collection of utilities made to reduce common boilerplate in **hapi v17+** projects, aid usage of events and streams in `async` functions (e.g. handlers and server methods), and provide versions of widely-used utilities from [Hoek](https://github.com/hapijs/hoek) optimized to perform well in hot code paths such as route handlers.
+Toys is a collection of utilities made to reduce common boilerplate in **hapi v19+** projects, aid usage of events and streams in `async` functions (e.g. handlers and server methods), and provide versions of widely-used utilities from [Hoek](https://github.com/hapijs/hoek) optimized to perform well in hot code paths such as route handlers.
 
 Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyserver-name-authenticate), [`Toys.reacher()`](API.md#toysreacherchain-options), and [`Toys.withRouteDefaults()`](API.md#toyswithroutedefaultsdefaults).  The [API Reference](API.md) is also filled with examples.
 
