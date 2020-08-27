@@ -5,4 +5,17 @@ node_js:
   - "14"
   - "node"
 
+env:
+  - HAPI_VERSION="19"
+  - HAPI_VERSION="20"
+
+install:
+  - "npm install"
+  - "npm install @hapi/hapi@$HAPI_VERSION"
+
 after_script: "npm run coveralls"
+
+jobs:
+  fast_finish: true
+  allow_failures:
+    - node_js: "node"
