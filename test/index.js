@@ -1116,6 +1116,14 @@ describe('Toys', () => {
             await Toys.stream(streamB, { cleanup: true });
             expect(streamB.eventNames()).to.equal([]);
         });
+
+        it('completes when stream is already destroyed.', async () => {
+
+            const readable = new Stream.Readable();
+            readable.destroy();
+
+            await expect(Toys.stream(readable)).to.reject('Premature close');
+        });
     });
 
     describe('options()', () => {
