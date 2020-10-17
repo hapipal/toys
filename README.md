@@ -18,7 +18,7 @@ Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyse
 ```js
 const Hapi = require('@hapi/hapi');
 const Boom = require('@hapi/boom');
-const Toys = require('@hapipal/toys');
+const Toys = require('toys');
 
 (async () => {
 
