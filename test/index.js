@@ -1058,6 +1058,72 @@ describe('Toys', () => {
             expect(ended).to.equal(false);
             expect(data).to.equal(['0', '1', '2', '3', '4']);
         });
+
+        it('uses Stream.finished()\'s options.', async () => {
+
+            let i = 0;
+
+            const counter = new Stream.Readable({
+                read() {
+
+                    if (i >= 5) {
+                        return process.nextTick(() => {
+
+                            // This would cause finished() to reject if opt.error was true
+                            this.emit('error', new Error('Oops!'));
+
+                            return this.push(null);
+                        });
+                    }
+
+                    const count = `${i++}`;
+                    process.nextTick(() => this.push(count));
+                }
+            });
+
+            counter.once('error', () => counter.resume());
+
+            let ended = false;
+            counter.once('end', () => {
+
+                ended = true;
+            });
+
+            const data = [];
+            counter.on('data', (count) => data.push(count.toString()));
+
+            expect(ended).to.equal(false);
+            expect(data).to.equal([]);
+
+            const value = await Toys.stream(counter, { error: false });
+
+            expect(value).to.not.exist();
+            expect(ended).to.equal(true);
+            expect(data).to.equal(['0', '1', '2', '3', '4']);
+        });
+
+        it('cleans-up dangling handlers when passed cleanup option.', async () => {
+
+            const streamA = new Stream.Readable();
+            streamA.push(null);
+            streamA.destroy();
+            await Toys.stream(streamA);
+            expect(streamA.eventNames()).to.not.equal([]);
+
+            const streamB = new Stream.Readable();
+            streamB.push(null);
+            streamB.destroy();
+            await Toys.stream(streamB, { cleanup: true });
+            expect(streamB.eventNames()).to.equal([]);
+        });
+
+        it('completes when stream is already destroyed.', async () => {
+
+            const readable = new Stream.Readable();
+            readable.destroy();
+
+            await expect(Toys.stream(readable)).to.reject('Premature close');
+        });
     });
 
     describe('options()', () => {
