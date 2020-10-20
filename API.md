@@ -1,19 +1,9 @@
 # API
 
 ## `Toys`
-A container for a group of toys, each toy being a hapi utility.
-
-### `new Toys(server)`
-Creates an instance of toys specific to a hapi server `server`;
-
-> **A note on usage**
->
-> Each instance method, e.g. `toys.reacher()`, may also be used statically, e.g. `Toys.reacher()`.  The only difference between the static and instance methods is that some of the static methods have or require `server` arguments that are not necessary when working with an instance.
->
-> The docs below will document the static version of each toy, then note the signature of the instance version.
+A collection of toys, each toy being a hapi utility.
 
 ### `Toys.withRouteDefaults(defaults)`
-> As instance, `toys.withRouteDefaults(defaults)`
 
 Returns a function with signature `function(route)` that will apply `defaults` as defaults to the `route` [route configuration](https://github.com/hapijs/hapi/blob/master/API.md#server.route()) object.  It will shallow-merge any route `validate` and `bind` options to avoid inadvertently applying defaults to a Joi schema or other unfamiliar object.  If `route` is an array of routes, it will apply the defaults to each route in the array.
 
@@ -36,7 +26,6 @@ server.route(
 ```
 
 ### `Toys.pre(prereqs)`
-> As instance, `toys.pre(prereqs)`
 
 Returns a hapi [route prerequisite configuration](https://github.com/hapijs/hapi/blob/master/API.md#route.options.pre), mapping each key of `prereqs` to the `assign` value of a route prerequisite.  When the key's corresponding value is a function, that function is used as the `method` of the prerequisite.  When the key's corresponding value is an object, that object's keys and values are included in the prerequisite.  When `prereqs` is a function, that function is simply passed-through.  When `prereqs` is an array, the array's values are simply mapped as described above.
 
@@ -91,7 +80,6 @@ server.route({
 ```
 
 ### `Toys.ext(method, [options])`
-> As instance, `toys.ext(method, [options])`
 
 Returns a hapi [extension config](https://github.com/hapijs/hapi/blob/master/API.md#server.ext()) `{ method, options }` without the `type` field. The config only has `options` set when provided as an argument.  This is intended to be used with the route `ext` config.
 
@@ -119,7 +107,6 @@ server.route({
 ```
 
 ### `Toys.EXTENSION(method, [options])`
-> As instance, `toys.EXTENSION(method, [options])`
 
 Returns a hapi [extension config](https://github.com/hapijs/hapi/blob/master/API.md#server.ext()) `{ type, method, options}` with the `type` field set to `EXTENSION`, where `EXTENSION` is any of `onRequest`, `onPreAuth`, `onPostAuth`, `onCredentials`, `onPreHandler`, `onPostHandler`, `onPreResponse`, `onPreStart`, `onPostStart`, `onPreStop`, or `onPostStop`. The config only has `options` set when provided as an argument.  This is intended to be used with [`server.ext()`](https://github.com/hapijs/hapi/blob/master/API.md#server.ext()).
 
@@ -149,7 +136,6 @@ server.ext([
 ```
 
 ### `Toys.reacher(chain, [options])`
-> As instance, `toys.reacher(chain, [options])`
 
 Returns a function `function(obj)` that will return [`Hoek.reach(obj, chain, options)`](https://github.com/hapijs/hoek/blob/master/API.md#reachobj-chain-options).  Unlike `Hoek.reach()`, this function is designed to be performant in hot code paths such as route handlers.  See [`Hoek.reach()`](https://github.com/hapijs/hoek/blob/master/API.md#reachobj-chain-options) for a description of `options`.
 
@@ -176,7 +162,6 @@ server.route({
 ```
 
 ### `Toys.transformer(transform, [options])`
-> As instance, `toys.transformer(transform, [options])`
 
 Returns a function `function(obj)` that will return [`Hoek.transform(obj, transform, options)`](https://github.com/hapijs/hoek/blob/master/API.md#transformobj-transform-options).  Unlike `Hoek.transform()`, this function is designed to be performant in hot code paths such as route handlers.  See [`Hoek.reach()`](https://github.com/hapijs/hoek/blob/master/API.md#reachobj-chain-options) for a description of `options`.
 
@@ -205,7 +190,6 @@ server.route({
 ```
 
 ### `Toys.auth.strategy(server, name, authenticate)`
-> As instance, `toys.auth.strategy(name, authenticate)`
 
 Adds an auth scheme and strategy with name `name` to `server`.  Its implementation is given by `authenticate` as described in [`server.auth.scheme()`](https://github.com/hapijs/hapi/blob/master/API.md#server.auth.scheme()).  This is intended to make it simple to create a barebones auth strategy without having to create a reusable auth scheme; it is often useful for testing and simple auth implementations.
 
@@ -234,7 +218,6 @@ server.route({
 ```
 
 ### `Toys.noop`
-> As instance, `toys.noop`
 
 This is a plugin named `toys-noop` that does nothing and can be registered multiple times.  This can be useful when conditionally registering a plugin in a list or [glue](https://github.com/hapijs/glue) manifest.
 
@@ -247,7 +230,6 @@ await server.register([
 ```
 
 ### `await Toys.event(emitter, eventName, [options])`
-> As instance, `await toys.event(emitter, eventName, [options])`
 
 Waits for `emitter` to emit an event named `eventName` and returns the first value passed to the event's listener.  When `options.multiple` is `true` it instead returns an array of all values passed to the listener.  Throws if an event named `'error'` is emitted unless `options.error` is `false`.  This can be useful when waiting for an event in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
 
@@ -275,7 +257,6 @@ server.route({
 ```
 
 ### `await Toys.stream(stream)`
-> As instance, `await toys.stream(stream)`
 
 Waits for a readable `stream` to end, a writable `stream` to finish, or a duplex `stream` to both end and finish.  Throws an error if `stream` emits an `'error'` event.  This can be useful when waiting for a stream to process in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
 
@@ -313,7 +294,6 @@ server.method({
 ```
 
 ### `Toys.options(obj)`
-> As instance, `toys.options([obj])`
 
 Given `obj` as a server, request, route, response toolkit, or realm, returns the relevant plugin options.  If `obj` is none of the above then this method will throw an error.  When used as an instance `obj` defaults to `toys.server`.
 
@@ -343,7 +323,6 @@ module.exports = {
 ```
 
 ### `Toys.header(response, name, value, [options])`
-> As instance, `toys.header(response, name, value, [options])`
 
 Designed to behave identically to hapi's [`response.header(name, value, [options])`](https://hapi.dev/api/#response.header()), but provide a unified interface for setting HTTP headers between both hapi [response objects](https://hapi.dev/api/#response-object) and [boom](https://hapi.dev/family/boom) errors.  This is useful in request extensions, when you don't know if [`request.response`](https://hapi.dev/api/#request.response) is a hapi response object or a boom error.  Returns `response`.
 
@@ -356,41 +335,33 @@ Designed to behave identically to hapi's [`response.header(name, value, [options
   - `duplicate` - if `false`, the header value is not modified if the provided value is already included.  Does not apply when `append` is `false` or if the `name` is `'set-cookie'`.  Defaults to `true`.
 
 ### `Toys.getHeaders(response)`
-> As instance, `toys.getHeaders(response)`
 
 Returns `response`'s current HTTP headers, where `response` may be a hapi [response object](https://hapi.dev/api/#response-object) or a [boom](https://hapi.dev/family/boom) error.
 
 ### `Toys.code(response, statusCode)`
-> As instance, `toys.code(response, statusCode)`
 
 Designed to behave identically to hapi's [`response.code(statusCode)`](https://hapi.dev/api/#response.code()), but provide a unified interface for setting the HTTP status code between both hapi [response objects](https://hapi.dev/api/#response-object) and [boom](https://hapi.dev/family/boom) errors.  This is useful in request extensions, when you don't know if [`request.response`](https://hapi.dev/api/#request.response) is a hapi response object or a boom error.  Returns `response`.
 
 ### `Toys.getCode(response)`
-> As instance, `toys.getCode(response)`
 
 Returns `response`'s current HTTP status code, where `response` may be a hapi [response object](https://hapi.dev/api/#response-object) or a [boom](https://hapi.dev/family/boom) error.
 
 ### `Toys.realm(obj)`
-> As instance, `toys.realm([obj])`
 
 Given `obj` as a server, request, route, response toolkit, or realm, returns the relevant realm.  If `obj` is none of the above then this method will throw an error.  When used as an instance `obj` defaults to `toys.server`.
 
 ### `Toys.rootRealm(realm)`
-> As instance, `toys.rootRealm()`
 
 Given a `realm` this method follows the `realm.parent` chain and returns the topmost realm, known as the "root realm."  When used as an instance, returns `toys.server.realm`'s root realm.
 
 ### `Toys.state(realm, pluginName)`
-> As instance, `toys.state(pluginName)`
 
 Returns the plugin state for `pluginName` within `realm` (`realm.plugins[pluginName]`), and initializes it to an empty object if it is not already set.  When used as an instance, returns the plugin state within `toys.server.realm`.
 
 ### `Toys.rootState(realm, pluginName)`
-> As instance, `toys.rootState(pluginName)`
 
 Returns the plugin state for `pluginName` within `realm`'s [root realm](#toysrootrealmrealm), and initializes it to an empty object if it is not already set.  When used as an instance, returns the plugin state within `toys.server.realm`'s root realm.
 
 ### `Toys.forEachAncestorRealm(realm, fn)`
-> As instance, `toys.forEachAncestorRealm(fn)`
 
 Walks up the `realm.parent` chain and calls `fn(realm)` for each realm, starting with the passed `realm`.  When used as an instance, this method starts with `toys.server.realm`.

@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "lab -a @hapi/code -t 100 -L -I \"FinalizationRegistry,WeakRef\"",
+    "test": "lab -a @hapi/code -t 100 -L",
     "coveralls": "lab -r lcov | coveralls"
   },
   "repository": {
@@ -28,15 +28,13 @@
   },
   "homepage": "https://github.com/hapipal/toys#readme",
   "dependencies": {
-    "@hapi/hoek": "8.x.x"
+    "@hapi/hoek": "9.x.x"
   },
   "devDependencies": {
-    "@hapi/boom": "7.x.x",
-    "@hapi/code": "6.x.x",
-    "@hapi/hapi": "18.x.x",
-    "@hapi/hapi-20": "npm:@hapi/hapi@20",
-    "@hapi/lab": "20.x.x",
-    "@hapi/somever": "2.x.x",
+    "@hapi/boom": "9.x.x",
+    "@hapi/code": "8.x.x",
+    "@hapi/hapi": "20.x.x",
+    "@hapi/lab": "24.x.x",
     "coveralls": "3.x.x"
   }
 }
