@@ -256,9 +256,9 @@ server.route({
 });
 ```
 
-### `await Toys.stream(stream)`
+### `await Toys.stream(stream, [options])`
 
-Waits for a readable `stream` to end, a writable `stream` to finish, or a duplex `stream` to both end and finish.  Throws an error if `stream` emits an `'error'` event.  This can be useful when waiting for a stream to process in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
+Waits for a readable `stream` to end, a writable `stream` to finish, or a duplex `stream` to both end and finish.  Throws an error if `stream` emits an `'error'` event.  This can be useful when waiting for a stream to process in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.  This is powered by node's [`Stream.finished()`](https://nodejs.org/api/stream.html#stream_stream_finished_stream_options_callback), and accepts all of that utility's `options`.  When `options.cleanup` is `true`, dangling event handlers left by `Stream.finished()` will be removed.
 
 ```js
 const Fs = require('fs');
