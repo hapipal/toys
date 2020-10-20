@@ -1,8 +1,11 @@
 {
-  "name": "toys",
+  "name": "@hapipal/toys",
   "version": "2.3.1",
   "description": "The hapi utility toy chest",
   "main": "lib/index.js",
+  "engines": {
+    "node": ">=12"
+  },
   "directories": {
     "test": "test"
   },
@@ -29,6 +32,14 @@
   "homepage": "https://github.com/hapipal/toys#readme",
   "dependencies": {
     "@hapi/hoek": "9.x.x"
+  },
+  "peerDependencies": {
+    "@hapi/hapi": ">=19 <21"
+  },
+  "peerDependenciesMeta": {
+    "@hapi/hapi": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@hapi/boom": "9.x.x",
