@@ -1837,4 +1837,122 @@ describe('Toys', () => {
             expect(res.statusCode).to.equal(403);
         });
     });
+
+    describe('asyncStorage(), withAsyncStorage(), and asyncStorageInternals()', () => {
+
+        it('set-up async local storage based on a string identifier.', async () => {
+
+            const multiplyBy = async (x, ms) => {
+
+                await Hoek.wait(ms);
+
+                return x * (Toys.asyncStorage('y') || 0);
+            };
+
+            const [a, b, c, d] = await Promise.all([
+                Toys.withAsyncStorage('y', 2, async () => await multiplyBy(4, 10)),
+                multiplyBy(4, 20),
+                Toys.withAsyncStorage('y', 4, async () => await multiplyBy(4, 30)),
+                Toys.withAsyncStorage('y', 5, async () => await multiplyBy(4, 40))
+            ]);
+
+            expect(a).to.equal(2 * 4);
+            expect(b).to.equal(0 * 4);
+            expect(c).to.equal(4 * 4);
+            expect(d).to.equal(5 * 4);
+        });
+
+        it('set-up async local storage based on a symbol identifier.', async () => {
+
+            const kY = Symbol('y');
+
+            const multiplyBy = async (x, ms) => {
+
+                await Hoek.wait(ms);
+
+                return x * (Toys.asyncStorage(kY) || 0);
+            };
+
+            const [a, b, c, d] = await Promise.all([
+                Toys.withAsyncStorage(kY, 2, async () => await multiplyBy(4, 10)),
+                multiplyBy(4, 20),
+                Toys.withAsyncStorage(kY, 4, async () => await multiplyBy(4, 30)),
+                Toys.withAsyncStorage(kY, 5, async () => await multiplyBy(4, 40))
+            ]);
+
+            expect(a).to.equal(2 * 4);
+            expect(b).to.equal(0 * 4);
+            expect(c).to.equal(4 * 4);
+            expect(d).to.equal(5 * 4);
+        });
+
+        it('do not allow conflicting async local storage identifiers on the same stack.', async () => {
+
+            const multiplyBy = async (x) => {
+
+                await Hoek.wait(0);
+
+                return x * (Toys.asyncStorage('y') || 0);
+            };
+
+            const getResult = async () => {
+
+                return await Toys.withAsyncStorage('y', 3, async () => {
+
+                    const a = await multiplyBy(4);
+
+                    return await Toys.withAsyncStorage('y', a, async () => {
+
+                        return await multiplyBy(5);
+                    });
+                });
+            };
+
+            await expect(getResult()).to.reject('There is already an active async store for identifier "y".');
+        });
+
+        it('generate errors for Symbols properly.', async () => {
+
+            const kY = Symbol('y');
+
+            const multiplyBy = async (x) => {
+
+                await Hoek.wait(0);
+
+                return x * (Toys.asyncStorage(kY) || 0);
+            };
+
+            const getResult = async () => {
+
+                return await Toys.withAsyncStorage(kY, 3, async () => {
+
+                    const a = await multiplyBy(4);
+
+                    return await Toys.withAsyncStorage(kY, a, async () => {
+
+                        return await multiplyBy(5);
+                    });
+                });
+            };
+
+            await expect(getResult()).to.reject('There is already an active async store for identifier "Symbol(y)".');
+        });
+
+        it('expose async local storage instances.', async () => {
+
+            const multiplyBy = async (x) => {
+
+                await Hoek.wait(0);
+
+                Toys.asyncStorageInternals().get('y').disable();
+
+                return x * (Toys.asyncStorage('y') || 0);
+            };
+
+            const a = await Toys.withAsyncStorage('y', 3, async () => await multiplyBy(4));
+
+            expect(a).to.equal(0);
+            expect(Toys.asyncStorageInternals()).to.be.an.instanceof(Map);
+        });
+    });
 });

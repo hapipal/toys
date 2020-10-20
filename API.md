@@ -365,3 +365,30 @@ Returns the plugin state for `pluginName` within `realm`'s [root realm](#toysroo
 ### `Toys.forEachAncestorRealm(realm, fn)`
 
 Walks up the `realm.parent` chain and calls `fn(realm)` for each realm, starting with the passed `realm`.  When used as an instance, this method starts with `toys.server.realm`.
+
+### `Toys.asyncStorage(identifier)`
+
+Returns async local storage store associated with `identifier`, as set-up using [`Toys.withAsyncStorage()`](#toyswithasyncstorageidentifier-store-fn).  When there is no active store, returns `undefined`.
+
+### `Toys.withAsyncStorage(identifier, store, fn)`
+
+Runs and returns the result of `fn` with an active async local storage `store` identified by `identifier`.  Intended to be used with [`Toys.asyncStorage()`](#toysasyncstorageidentifier).  Note that string identifiers beginning with `'@hapipal'` are reserved.
+
+```js
+const multiplyBy = async (x) => {
+
+    await Hoek.wait(10); // Wait 10ms
+
+    return x * (Toys.asyncStorage('y') || 0);
+};
+
+// The result is 4 * 3 = 12
+const result = await Toys.withAsyncStorage('y', 3, async () => {
+
+    return await multiplyBy(4);
+});
+```
+
+### `Toys.asyncStorageInternals()`
+
+Returns a `Map` which maps identifiers utilized by [`Toys.withAsyncStorage()`](#toyswithasyncstorageidentifier-store-fn) to the underlying instances of [`AsyncLocalStorage`](https://nodejs.org/api/async_hooks.html#async_hooks_class_asynclocalstorage).
