@@ -6,10 +6,15 @@ The hapi utility toy chest
 
 Lead Maintainer - [Devin Ivy](https://github.com/devinivy)
 
+## Installation
+```sh
+npm install @hapipal/toys
+```
+
 ## Usage
 > See also the [API Reference](API.md)
 >
-> For support below node v12 or hapi v19 see toys v2.
+> Toys is intended for use with hapi v19+ and nodejs v12+ (_see v2 for lower support_).
 
 Toys is a collection of utilities made to reduce common boilerplate in **hapi v19+** projects, aid usage of events and streams in `async` functions (e.g. handlers and server methods), and provide versions of widely-used utilities from [Hoek](https://github.com/hapijs/hoek) optimized to perform well in hot code paths such as route handlers.
 

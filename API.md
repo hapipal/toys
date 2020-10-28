@@ -1,8 +1,12 @@
 # API
 
-## `Toys`
-A collection of toys, each toy being a hapi utility.
+The hapi utility toy chest
 
+> **Note**
+>
+> Toys is intended for use with hapi v19+ and nodejs v12+ (_see v2 for lower support_).
+
+## `Toys`
 ### `Toys.withRouteDefaults(defaults)`
 
 Returns a function with signature `function(route)` that will apply `defaults` as defaults to the `route` [route configuration](https://github.com/hapijs/hapi/blob/master/API.md#server.route()) object.  It will shallow-merge any route `validate` and `bind` options to avoid inadvertently applying defaults to a Joi schema or other unfamiliar object.  If `route` is an array of routes, it will apply the defaults to each route in the array.
