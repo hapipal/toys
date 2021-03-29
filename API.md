@@ -402,7 +402,8 @@ Returns a `Map` which maps identifiers utilized by [`Toys.withAsyncStorage()`](#
 Converts a Joi creation schema into a patch schema, ignoring defaults and making all keys optional.
 
 ```js
+// result.name is no longer required
 const result = await Toys.patchJoiSchema(Joi.object().keys({
-    name: Joi.string.required()
+    name: Joi.string().required()
 }));
 ```
