@@ -9,6 +9,7 @@ const Code = require('@hapi/code');
 const Hapi = require('@hapi/hapi');
 const Boom = require('@hapi/boom');
 const Hoek = require('@hapi/hoek');
+const Joi = require('joi');
 const Toys = require('..');
 
 // Test shortcuts
@@ -1953,6 +1954,37 @@ describe('Toys', () => {
 
             expect(a).to.equal(0);
             expect(Toys.asyncStorageInternals()).to.be.an.instanceof(Map);
+        });
+    });
+
+    describe('joi patch schema', () => {
+
+        it('returns undefined if no schema passed in', () => {
+
+            const result = Toys.patchJoiSchema();
+
+            expect(result).to.equal(undefined);
+        });
+
+        it('returns patched schema for joi object', () => {
+
+            const schema = Joi.object();
+
+            const result = Toys.patchJoiSchema(schema);
+
+            expect(result).to.be.an.object();
+        });
+
+        it('returns patched schema for joi object with keys', () => {
+
+            const schema = Joi.object().keys({
+                a: Joi.string().required(),
+                b: Joi.date()
+            });
+
+            const result = Toys.patchJoiSchema(schema);
+
+            expect(result).to.be.an.object();
         });
     });
 });
