@@ -403,7 +403,7 @@ Converts a Joi creation schema into a patch schema, ignoring defaults and making
 
 ```js
 // result.name is no longer required
-const result = await Toys.patchJoiSchema(Joi.object().keys({
+const result = Toys.patchJoiSchema(Joi.object().keys({
     name: Joi.string().required()
 }));
 ```
