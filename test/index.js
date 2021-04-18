@@ -1959,26 +1959,41 @@ describe('Toys', () => {
 
     describe('patchJoiSchema()', () => {
 
-
         it('returns patched schema for joi object', () => {
 
             const schema = Joi.object();
 
-            const result = Toys.patchJoiSchema(schema);
+            const patchedSchema = Toys.patchJoiSchema(schema);
 
-            expect(result).to.be.an.object();
+            expect(patchedSchema).to.be.an.object();
         });
 
-        it('returns patched schema for joi object with keys', () => {
+        it('patched joi schema contains optional keys', () => {
 
             const schema = Joi.object().keys({
                 a: Joi.string().required(),
-                b: Joi.date()
+                b: Joi.date().required()
             });
 
-            const result = Toys.patchJoiSchema(schema);
+            const patchedSchema = Toys.patchJoiSchema(schema);
+            const described = patchedSchema.describe();
 
-            expect(result).to.be.an.object();
+            expect(described.preferences).to.equal({ noDefaults: true });
+            expect(described.keys.a.flags).to.equal({ presence: 'optional' });
+            expect(described.keys.b.flags).to.equal({ presence: 'optional' });
+        });
+
+        it('patched joi schema does not enforce defaults', () => {
+
+            const schema = Joi.object().keys({
+                x: Joi.number().integer().default(10)
+            });
+
+            const patchedSchema = Toys.patchJoiSchema(schema);
+            const described = patchedSchema.describe();
+
+            expect(described.keys.x.flags).to.equal({ default: 10, presence: 'optional' });
+            expect(patchedSchema.validate({ x: undefined })).to.equal({ value: { x: undefined } });
         });
     });
 });
