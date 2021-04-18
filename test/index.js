@@ -1957,14 +1957,8 @@ describe('Toys', () => {
         });
     });
 
-    describe('joi patch schema', () => {
+    describe('patchJoiSchema()', () => {
 
-        it('returns undefined if no schema passed in', () => {
-
-            const result = Toys.patchJoiSchema();
-
-            expect(result).to.equal(undefined);
-        });
 
         it('returns patched schema for joi object', () => {
 
