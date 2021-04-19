@@ -9,6 +9,7 @@ const Code = require('@hapi/code');
 const Hapi = require('@hapi/hapi');
 const Boom = require('@hapi/boom');
 const Hoek = require('@hapi/hoek');
+const Joi = require('joi');
 const Toys = require('..');
 
 // Test shortcuts
@@ -1953,6 +1954,46 @@ describe('Toys', () => {
 
             expect(a).to.equal(0);
             expect(Toys.asyncStorageInternals()).to.be.an.instanceof(Map);
+        });
+    });
+
+    describe('patchJoiSchema()', () => {
+
+        it('returns patched schema for joi object', () => {
+
+            const schema = Joi.object();
+
+            const patchedSchema = Toys.patchJoiSchema(schema);
+
+            expect(patchedSchema).to.be.an.object();
+        });
+
+        it('patched joi schema contains optional keys', () => {
+
+            const schema = Joi.object().keys({
+                a: Joi.string().required(),
+                b: Joi.date().required()
+            });
+
+            const patchedSchema = Toys.patchJoiSchema(schema);
+            const described = patchedSchema.describe();
+
+            expect(described.preferences).to.equal({ noDefaults: true });
+            expect(described.keys.a.flags).to.equal({ presence: 'optional' });
+            expect(described.keys.b.flags).to.equal({ presence: 'optional' });
+        });
+
+        it('patched joi schema does not enforce defaults', () => {
+
+            const schema = Joi.object().keys({
+                x: Joi.number().integer().default(10)
+            });
+
+            const patchedSchema = Toys.patchJoiSchema(schema);
+            const described = patchedSchema.describe();
+
+            expect(described.keys.x.flags).to.equal({ default: 10, presence: 'optional' });
+            expect(patchedSchema.validate({ x: undefined })).to.equal({ value: { x: undefined } });
         });
     });
 });

@@ -396,3 +396,14 @@ const result = await Toys.withAsyncStorage('y', 3, async () => {
 ### `Toys.asyncStorageInternals()`
 
 Returns a `Map` which maps identifiers utilized by [`Toys.withAsyncStorage()`](#toyswithasyncstorageidentifier-store-fn) to the underlying instances of [`AsyncLocalStorage`](https://nodejs.org/api/async_hooks.html#async_hooks_class_asynclocalstorage).
+
+### `Toys.patchJoiSchema(schema)`
+
+Converts a Joi creation schema into a patch schema, ignoring defaults and making all keys optional.
+
+```js
+// result.name is no longer required
+const result = Toys.patchJoiSchema(Joi.object().keys({
+    name: Joi.string().required()
+}));
+```
