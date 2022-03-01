@@ -3,6 +3,7 @@
   "version": "3.1.0",
   "description": "The hapi utility toy chest",
   "main": "lib/index.js",
+  "types": "types.d.ts",
   "engines": {
     "node": ">=12"
   },
@@ -47,6 +48,7 @@
     "@hapi/hapi": "20.x.x",
     "@hapi/lab": "24.x.x",
     "coveralls": "3.x.x",
-    "joi": "17.x.x"
+    "joi": "17.x.x",
+    "@hapipal/types-toys": ">=0"
   }
 }
