@@ -2,7 +2,7 @@
 
 The hapi utility toy chest
 
-[![Build Status](https://travis-ci.org/hapipal/toys.svg?branch=master)](https://travis-ci.org/hapipal/toys) [![Coverage Status](https://coveralls.io/repos/hapipal/toys/badge.svg?branch=master&service=github)](https://coveralls.io/github/hapipal/toys?branch=master)
+[![Build Status](https://app.travis-ci.com/hapipal/toys.svg?branch=main)](https://app.travis-ci.com/hapipal/toys) [![Coverage Status](https://coveralls.io/repos/hapipal/toys/badge.svg?branch=main&service=github)](https://coveralls.io/github/hapipal/toys?branch=main)
 
 Lead Maintainer - [Devin Ivy](https://github.com/devinivy)
 
