@@ -139,60 +139,6 @@ server.ext([
 ]);
 ```
 
-### `Toys.reacher(chain, [options])`
-
-Returns a function `function(obj)` that will return [`Hoek.reach(obj, chain, options)`](https://github.com/hapijs/hoek/blob/master/API.md#reachobj-chain-options).  Unlike `Hoek.reach()`, this function is designed to be performant in hot code paths such as route handlers.  See [`Hoek.reach()`](https://github.com/hapijs/hoek/blob/master/API.md#reachobj-chain-options) for a description of `options`.
-
-```js
-const getAuthedGroupId = Toys.reacher('auth.credentials.user.group.id');
-
-server.route({
-    method: 'get',
-    path: '/user/group',
-    options: {
-        auth: 'my-strategy',
-        handler: (request) => {
-
-            const group = getAuthedGroupId(request);
-
-            if (group !== 'BRS') {
-                throw Boom.unauthorized();
-            }
-
-            return { group };
-        }
-    }
-});
-```
-
-### `Toys.transformer(transform, [options])`
-
-Returns a function `function(obj)` that will return [`Hoek.transform(obj, transform, options)`](https://github.com/hapijs/hoek/blob/master/API.md#transformobj-transform-options).  Unlike `Hoek.transform()`, this function is designed to be performant in hot code paths such as route handlers.  See [`Hoek.reach()`](https://github.com/hapijs/hoek/blob/master/API.md#reachobj-chain-options) for a description of `options`.
-
-```js
-const userAddress = Toys.transformer({
-    'street1': 'address.street_one',
-    'street2': 'address.street_two',
-    'city': 'address.city',
-    'state': 'address.state.code',
-    'country': 'address.country.code'
-});
-
-server.route({
-    method: 'get',
-    path: '/user/address',
-    options: {
-        auth: 'my-strategy',
-        handler: (request) => {
-
-            const address = userAddress(request.auth.credentials);
-
-            return { address };
-        }
-    }
-});
-```
-
 ### `Toys.auth.strategy(server, name, authenticate)`
 
 Adds an auth scheme and strategy with name `name` to `server`.  Its implementation is given by `authenticate` as described in [`server.auth.scheme()`](https://github.com/hapijs/hapi/blob/master/API.md#server.auth.scheme()).  This is intended to make it simple to create a barebones auth strategy without having to create a reusable auth scheme; it is often useful for testing and simple auth implementations.
@@ -231,70 +177,6 @@ await server.register([
     require('./my-plugin-b'),
     (process.env.NODE_ENV === 'production') ? Toys.noop : require('lout')
 ]);
-```
-
-### `await Toys.event(emitter, eventName, [options])`
-
-Waits for `emitter` to emit an event named `eventName` and returns the first value passed to the event's listener.  When `options.multiple` is `true` it instead returns an array of all values passed to the listener.  Throws if an event named `'error'` is emitted unless `options.error` is `false`.  This can be useful when waiting for an event in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.
-
-```js
-const ChildProcess = require('child_process');
-
-server.route({
-    method: 'get',
-    path: '/report/user/{id}',
-    options: {
-        handler: async (request) => {
-
-            const generateReport = ChildProcess.fork(`${__dirname}/report.js`);
-
-            generateReport.send({ userId: request.params.id });
-
-            const report = await Toys.event(generateReport, 'message');
-
-            generateReport.disconnect();
-
-            return report;
-        }
-    }
-});
-```
-
-### `await Toys.stream(stream, [options])`
-
-Waits for a readable `stream` to end, a writable `stream` to finish, or a duplex `stream` to both end and finish.  Throws an error if `stream` emits an `'error'` event.  This can be useful when waiting for a stream to process in a handler, extension, or server method, which all require an `async` function when returning a value asynchronously.  This is powered by node's [`Stream.finished()`](https://nodejs.org/api/stream.html#stream_stream_finished_stream_options_callback), and accepts all of that utility's `options`.  When `options.cleanup` is `true`, dangling event handlers left by `Stream.finished()` will be removed.
-
-```js
-const Fs = require('fs');
-const Crypto = require('crypto');
-
-// Hash a file and cache the result by filename
-
-server.method({
-    name: 'hash',
-    method: async (filename) => {
-
-        const hasher = Crypto.createHash('sha256');
-        const input = Fs.createReadStream(filename);
-        const output = input.pipe(hasher);
-
-        let hash = '';
-        output.on('data', (chunk) => {
-
-            hash += chunk.toString('hex');
-        });
-
-        await Toys.stream(output);
-
-        return hash;
-    },
-    options: {
-        cache: {
-            generateTimeout: 1000,
-            expiresIn: 2000
-        }
-    }
-});
 ```
 
 ### `Toys.options(obj)`
