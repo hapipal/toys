@@ -14,7 +14,7 @@ npm install @hapipal/toys
 ## Usage
 > See also the [API Reference](API.md)
 >
-> Toys is intended for use with hapi v20+ and nodejs v16+ (_see v4 for lower support_).
+> Toys is intended for use with hapi v20+ and nodejs v16+ (_see v3 for lower support_).
 
 Toys is a collection of utilities made to reduce common boilerplate in **hapi v20+** projects.
 
