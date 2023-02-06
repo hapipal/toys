@@ -4,7 +4,7 @@ The hapi utility toy chest
 
 > **Note**
 >
-> Toys is intended for use with hapi v19+ and nodejs v12+ (_see v2 for lower support_).
+> Toys is intended for use with hapi v20+ and nodejs v16+ (_see v4 for lower support_).
 
 ## `Toys`
 ### `Toys.withRouteDefaults(defaults)`
