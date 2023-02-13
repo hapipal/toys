@@ -16,9 +16,9 @@ npm install @hapipal/toys
 >
 > Toys is intended for use with hapi v20+ and nodejs v16+ (_see v3 for lower support_).
 
-Toys is a collection of utilities made to reduce common boilerplate in **hapi v20+** projects, aid usage of events and streams in `async` functions (e.g. handlers and server methods), and provide versions of widely-used utilities from [Hoek](https://github.com/hapijs/hoek) optimized to perform well in hot code paths such as route handlers.
+Toys is a collection of utilities made to reduce common boilerplate in **hapi v20+** projects.
 
-Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyserver-name-authenticate), [`Toys.reacher()`](API.md#toysreacherchain-options), and [`Toys.withRouteDefaults()`](API.md#toyswithroutedefaultsdefaults).  The [API Reference](API.md) is also filled with examples.
+Below is an example featuring [`Toys.auth.strategy()`](API.md#toysauthstrategyserver-name-authenticate) and [`Toys.withRouteDefaults()`](API.md#toyswithroutedefaultsdefaults).  The [API Reference](API.md) is also filled with examples.
 
 ```js
 const Hapi = require('@hapi/hapi');
@@ -42,9 +42,6 @@ const Toys = require('@hapipal/toys');
         return h.authenticated({ credentials: { user: { name: username } } });
     });
 
-    // Make function to efficiently index into a request to grab an authed user's name
-    const grabAuthedUsername = Toys.reacher('auth.credentials.user.name');
-
     // Default all route methods to "get", unless otherwise specified
     const defaultToGet = Toys.withRouteDefaults({ method: 'get' });
 
@@ -64,8 +61,7 @@ const Toys = require('@hapipal/toys');
                     auth: 'name-from-param', // Here's our simple auth strategy
                     handler: (request) => {
 
-                        // grabAuthedUsername() is designed to be quick
-                        const username = grabAuthedUsername(request);
+                        const username = request.auth.credentials?.user?.name;
 
                         return { username };
                     }

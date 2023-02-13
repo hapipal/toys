@@ -25,7 +25,6 @@ describe('import()', () => {
             'auth',
             'code',
             'default',
-            'event',
             'ext',
             'forEachAncestorRealm',
             'getCode',
@@ -46,13 +45,10 @@ describe('import()', () => {
             'options',
             'patchJoiSchema',
             'pre',
-            'reacher',
             'realm',
             'rootRealm',
             'rootState',
             'state',
-            'stream',
-            'transformer',
             'withAsyncStorage',
             'withRouteDefaults'
         ]);
